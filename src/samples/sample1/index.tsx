@@ -11,6 +11,8 @@ import {
 } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Mount } from '../../types';
+import { Boot, type BootTask } from './boot';
+import { ChargeButton, Dial, HexSwitch, OrderCube } from './controls';
 import { ORDERS, angularProfile, copies, generate, type GenOptions, type Glyph } from './glyph';
 import {
   BASE,
@@ -25,6 +27,7 @@ import {
   timeline,
   type Timeline,
 } from './render';
+import { clock, hex, now, pad, reduced, useFrame, useTicker, wobble } from './util';
 import './style.css';
 
 // Story: an operator console that samples one wedge of an unknown signal and resolves
@@ -33,22 +36,15 @@ import './style.css';
 const GLYPHS = 'アイウエオカキクケコサシスセソ0123456789ABCDEFXYZ#%&*+=<>/';
 const ARCHIVE_SIZE = 6;
 const LOG_SIZE = 40;
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FONT_URL = 'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap';
+const FONT_TIMEOUT = 3000;
+const GLITCH = 0.26;
 
-const wobble = (t: number, seed: number, amount: number) =>
-  (Math.sin(t * 2.3 + seed) * 0.6 + Math.sin(t * 5.7 + seed * 1.7) * 0.4) * amount;
-const hex = (v: number) => v.toString(16).toUpperCase().padStart(6, '0');
-const pad = (v: number, n: number) => String(v).padStart(n, '0');
 const newSeed = () => (Math.random() * 0xffffff) | 0;
-const clock = (s: number) => `${pad(Math.floor(s / 60), 2)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
 
 type Phase = 'SCANNING' | 'SAMPLING SOURCE WEDGE' | 'REFLECTING' | 'SIGNATURE RESOLVED';
 type Synth = { glyph: Glyph; copies: ReturnType<typeof copies>; tl: Timeline };
 type Entry = { seq: number; seed: number; opts: GenOptions; synth: Synth };
-
-/** Seconds since the page mounted; shared by every panel. */
-const T0 = performance.now() / 1000;
-const now = () => performance.now() / 1000 - T0;
 
 function phaseAt(t: number, tl: Timeline): Phase {
   if (t < SCAN) return 'SCANNING';
@@ -63,27 +59,26 @@ function cycleTime(start: number, tl: Timeline) {
   return reduced ? Math.max(t, tl.repEnd + GUIDE_FADE) : t;
 }
 
-function useFrame(fn: () => void) {
-  const ref = useRef(fn);
-  ref.current = fn;
-  useEffect(() => {
-    let raf = 0;
-    const loop = () => {
-      ref.current();
-      raf = requestAnimationFrame(loop);
+/** Loads the console typeface; the boot screen waits on it so the UI never re-flows after it appears. */
+function loadFont(link: HTMLLinkElement) {
+  return new Promise<string>((resolve) => {
+    const timer = setTimeout(() => resolve('TIMEOUT // FALLBACK'), FONT_TIMEOUT);
+    const finish = (result: string) => {
+      clearTimeout(timer);
+      resolve(result);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-}
-
-function useTicker(hz: number) {
-  const [t, setT] = useState(now);
-  useEffect(() => {
-    const id = setInterval(() => setT(now()), 1000 / hz);
-    return () => clearInterval(id);
-  }, [hz]);
-  return t;
+    link.addEventListener(
+      'load',
+      () =>
+        document.fonts.load('12px "Share Tech Mono"').then(
+          (faces) => finish(faces.length ? 'OK' : 'FALLBACK'),
+          () => finish('FALLBACK'),
+        ),
+      { once: true },
+    );
+    link.addEventListener('error', () => finish('OFFLINE // FALLBACK'), { once: true });
+    document.head.append(link);
+  });
 }
 
 function Panel(props: { index: string; title: string; boot: number; area: string; aside?: ReactNode; children: ReactNode }) {
@@ -100,15 +95,16 @@ function Panel(props: { index: string; title: string; boot: number; area: string
   );
 }
 
-function Console() {
+function Console({ initialSeed }: { initialSeed: number }) {
   const [opts, setOpts] = useState<GenOptions>({ order: 'auto', density: 5, rings: true, ticks: true, spokes: true });
-  const [seed, setSeed] = useState(newSeed);
+  const [seed, setSeed] = useState(initialSeed);
   const [seq, setSeq] = useState(1);
   const [hold, setHold] = useState(false);
   const [archive, setArchive] = useState<Entry[]>([]);
   const [logs, setLogs] = useState<{ id: number; at: number; text: string }[]>([]);
   const startRef = useRef(now());
   const logId = useRef(0);
+  const accepted = useRef(-1);
 
   const synth = useMemo<Synth>(() => {
     const glyph = generate(seed, opts);
@@ -143,7 +139,12 @@ function Console() {
 
   const onPhase = (phase: Phase) => {
     const { glyph, copies: list } = synth;
-    if (phase === 'SCANNING') log(`SEQ ${pad(seq, 4)} // SEED ${hex(glyph.seed)} ACCEPTED`);
+    if (phase === 'SCANNING') {
+      // Parameter changes re-run the same sample; only a new seed is a new acquisition.
+      if (accepted.current === glyph.seed) log(`RESYNTH D${glyph.n} // SEED ${hex(glyph.seed)}`);
+      else log(`SEQ ${pad(seq, 4)} // SEED ${hex(glyph.seed)} ACCEPTED`);
+      accepted.current = glyph.seed;
+    }
     if (phase === 'SAMPLING SOURCE WEDGE') log(`SAMPLING WEDGE 0/${list.length} // ${glyph.prims.length} PRIM`);
     if (phase === 'REFLECTING') log(`REFLECT D${glyph.n} ×${list.length}`);
     if (phase === 'SIGNATURE RESOLVED') {
@@ -170,7 +171,7 @@ function Console() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLButtonElement || e.target instanceof HTMLInputElement) return;
+      if (e.target instanceof HTMLButtonElement || (e.target instanceof Element && e.target.role === 'slider')) return;
       if (e.code === 'Space') {
         e.preventDefault();
         log('MANUAL RESEED');
@@ -183,7 +184,7 @@ function Console() {
   }, [log, reseed, toggleHold]);
 
   return (
-    <div className="s1">
+    <>
       <TopBar hold={hold} />
       <Panel index="01" title="SIGNATURE SYNTH" boot={0} area="main" aside={`SEQ ${pad(seq, 4)}`}>
         <Scope synth={synth} startRef={startRef} hold={hold} seq={seq} onPhase={onPhase} onCycleEnd={onCycleEnd} />
@@ -211,7 +212,7 @@ function Console() {
       <Panel index="05" title="EVENT LOG" boot={4} area="log">
         <Log entries={logs} />
       </Panel>
-    </div>
+    </>
   );
 }
 
@@ -243,6 +244,18 @@ function Scope(props: {
   const microRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const statusRef = useRef<HTMLSpanElement>(null);
   const state = useRef({ phase: '' as Phase | '', since: 0, shown: '', tick: -1, ended: false, synth: props.synth });
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Glitch transition: every new synthesis tears the scope for a moment.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || reduced) return;
+    el.classList.remove('glitch');
+    void el.offsetWidth;
+    el.classList.add('glitch');
+    const id = setTimeout(() => el.classList.remove('glitch'), GLITCH * 1000);
+    return () => clearTimeout(id);
+  }, [props.synth]);
 
   useFrame(() => {
     const canvas = canvasRef.current;
@@ -370,7 +383,7 @@ function Scope(props: {
   });
 
   return (
-    <div className="scope">
+    <div className="scope" ref={rootRef}>
       <canvas ref={canvasRef} />
       {(['tl', 'tr', 'bl', 'br'] as const).map((at, i) => (
         <span
@@ -420,70 +433,46 @@ function Controls(props: {
         <label>
           SYM ORDER <span>{opts.order === 'auto' ? `AUTO → D${props.synth.glyph.n}` : `D${opts.order}`}</span>
         </label>
-        <div className="seg">
-          {(['auto', ...ORDERS] as const).map((o) => (
-            <button
-              key={o}
-              aria-pressed={opts.order === o}
-              onClick={() => update({ order: o }, `ORDER=${o === 'auto' ? 'AUTO' : `D${o}`}`)}
-            >
-              {o === 'auto' ? 'A' : o}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="field">
-        <label>
-          DENSITY <span>{pad(opts.density, 2)} WALK</span>
-        </label>
-        <input
-          type="range"
-          min={1}
-          max={10}
-          value={opts.density}
-          style={{ '--v': (opts.density - 1) / 9 } as CSSProperties}
-          onChange={(e) => update({ density: Number(e.target.value) }, `DENSITY=${pad(Number(e.target.value), 2)}`)}
+        <OrderCube
+          order={opts.order}
+          autoN={props.synth.glyph.n}
+          onChange={(o) => o !== opts.order && update({ order: o }, `ORDER=${o === 'auto' ? 'AUTO' : `D${o}`}`)}
         />
-        <div className="scale">
-          {Array.from({ length: 10 }, (_, i) => (
-            <i key={i} />
-          ))}
-        </div>
       </div>
 
       <div className="field">
-        <label>LAYERS</label>
-        <div className="toggles">
-          {layers.map(([key, label]) => (
-            <button
-              key={key}
-              className="toggle"
-              aria-pressed={opts[key]}
-              onClick={() => update({ [key]: !opts[key] }, `${label}=${opts[key] ? 'OFF' : 'ON'}`)}
-            >
-              <i />
-              {label}
-            </button>
-          ))}
+        <label>
+          DENSITY / FIRE <span>{pad(opts.density, 2)} WALK</span>
+        </label>
+        <div className="jog">
+          <Dial
+            value={opts.density}
+            min={1}
+            max={10}
+            unit="WALK"
+            onChange={(v) => update({ density: v }, `DENSITY=${pad(v, 2)}`)}
+          />
+          <ChargeButton label="RESEED" onFire={props.reseed} />
         </div>
       </div>
 
       <div className="field">
         <label>
-          CYCLE <span>{props.hold ? 'HOLD' : 'AUTO'}</span>
+          LAYERS / CYCLE <span>{props.hold ? 'HOLD' : 'AUTO'}</span>
         </label>
+        <div className="hexes">
+          {layers.map(([key, label]) => (
+            <HexSwitch
+              key={key}
+              label={label}
+              on={opts[key]}
+              onToggle={() => update({ [key]: !opts[key] }, `${label}=${opts[key] ? 'OFF' : 'ON'}`)}
+            />
+          ))}
+          <HexSwitch label="HOLD" warn on={props.hold} onToggle={props.toggleHold} />
+        </div>
         <div className="cycle" ref={barRef}>
           <i />
-        </div>
-        <div className="actions">
-          <button className="toggle warn" aria-pressed={props.hold} onClick={props.toggleHold}>
-            <i />
-            HOLD
-          </button>
-          <button className="primary" onClick={props.reseed}>
-            RESEED
-          </button>
         </div>
       </div>
 
@@ -711,8 +700,52 @@ function Log({ entries }: { entries: { id: number; at: number; text: string }[] 
   );
 }
 
+function App({ fontLink }: { fontLink: HTMLLinkElement }) {
+  const [seed] = useState(newSeed);
+  const [ready, setReady] = useState(false);
+  const [booting, setBooting] = useState(true);
+
+  const tasks = useMemo<BootTask[]>(
+    () => [
+      { label: 'BOOTSTRAP ROM v4.12', run: () => 'OK', min: 0.18 },
+      { label: 'TYPEFACE // SHARE TECH MONO', run: () => loadFont(fontLink), min: 0.3 },
+      {
+        label: 'SYMMETRY GROUP TABLE D1-D8',
+        run: () => `${ORDERS.reduce((n, o) => n + copies(o).length, 0)} ELEMENTS`,
+        min: 0.22,
+      },
+      {
+        label: 'SIGNAL BUFFER',
+        run: () => {
+          const g = generate(seed, { order: 'auto', density: 5, rings: true, ticks: true, spokes: true });
+          return `SEED ${hex(seed)} · D${g.n}`;
+        },
+        min: 0.26,
+      },
+      {
+        label: 'DISPLAY SURFACE',
+        run: () => `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio}x`,
+        min: 0.2,
+      },
+      { label: 'OPERATOR CONSOLE', run: () => 'ONLINE', min: 0.2 },
+    ],
+    [seed, fontLink],
+  );
+
+  return (
+    <div className="s1">
+      {ready && <Console initialSeed={seed} />}
+      {booting && <Boot tasks={tasks} onReady={() => setReady(true)} onDone={() => setBooting(false)} />}
+    </div>
+  );
+}
+
 export const mount: Mount = (el) => {
+  const fontLink = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: FONT_URL });
   const root = createRoot(el);
-  root.render(<Console />);
-  return () => root.unmount();
+  root.render(<App fontLink={fontLink} />);
+  return () => {
+    root.unmount();
+    fontLink.remove();
+  };
 };

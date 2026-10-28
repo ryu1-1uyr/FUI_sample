@@ -165,7 +165,7 @@
 
 /* ---- 02 controls ---- */
 
-.s1 .controls { display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
+.s1 .controls { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; overflow-x: hidden; }
 .s1 .field { display: flex; flex-direction: column; gap: 6px; }
 
 .s1 .field label {
@@ -178,79 +178,112 @@
 
 .s1 .field label span { color: var(--fui-ink); }
 
-.s1 .seg { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--fui-line); }
-.s1 .seg button { padding: 5px 0; text-align: center; color: var(--fui-ink-dim); }
-.s1 .seg button + button { border-left: 1px solid var(--fui-faint); }
-.s1 .seg button:hover { color: var(--fui-ink); background: var(--fui-faint); }
+/* Order cube */
+.s1 .cube { position: relative; height: 150px; border: 1px solid var(--fui-faint); }
+.s1 .cube canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.s1 .cube canvas:active { cursor: grabbing; }
+.s1 .cube .micro.tl { top: 3px; left: 5px; }
+.s1 .cube .micro.tr { top: 3px; right: 5px; color: var(--fui-ink); }
+.s1 .cube .micro.bl { bottom: 2px; left: 5px; font-size: 9px; }
+.s1 .blink { animation: blink 1s steps(2, jump-none) infinite; }
 
-.s1 .seg button[aria-pressed='true'] {
-  color: #06201c;
-  background: var(--fui-ink);
-  box-shadow: 0 0 10px rgb(184 255 240 / 0.5);
+/* Density dial + charge button */
+.s1 .jog { display: flex; align-items: center; justify-content: space-between; }
+
+.s1 .dial { width: 124px; height: 124px; cursor: pointer; touch-action: none; overflow: visible; }
+.s1 .dial .spin {
+  fill: none;
+  stroke: var(--fui-line);
+  stroke-dasharray: 1 5;
+  transform-origin: 60px 60px;
+  animation: spin 14s linear infinite;
 }
+.s1 .dial .inner { fill: rgb(184 255 240 / 0.03); stroke: var(--fui-faint); }
+.s1 .dial .seg { fill: none; stroke: var(--fui-faint); stroke-width: 7; transition: stroke 0.2s, filter 0.2s; }
+.s1 .dial .seg.on { stroke: var(--fui-ink); filter: drop-shadow(0 0 3px var(--fui-ink)); }
+.s1 .dial .needle { fill: var(--fui-ink); transform-origin: 60px 60px; transition: transform var(--fui-snap); }
+.s1 .dial text { fill: var(--fui-ink); text-anchor: middle; font-family: var(--fui-mono); }
+.s1 .dial .value { font-size: 22px; letter-spacing: 0.04em; }
+.s1 .dial .unit { font-size: 7px; letter-spacing: 0.2em; fill: var(--fui-ink-dim); }
 
-.s1 input[type='range'] {
-  appearance: none;
-  width: 100%;
-  height: 14px;
-  margin: 0;
-  background: linear-gradient(var(--fui-ink), var(--fui-ink)) left center / calc(var(--v) * 100%) 1px no-repeat,
-    linear-gradient(var(--fui-line), var(--fui-line)) left center / 100% 1px no-repeat;
-  cursor: pointer;
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.s1 .charge { position: relative; width: 76px; height: 76px; touch-action: none; }
+.s1 .charge svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.s1 .charge circle { fill: none; }
+.s1 .charge .orbit { stroke: var(--fui-line); stroke-dasharray: 3 3; transform-origin: 32px 32px; }
+.s1 .charge .track { stroke: var(--fui-faint); stroke-width: 3; }
+.s1 .charge .fill {
+  stroke: var(--fui-ink);
+  stroke-width: 3;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transform: rotate(-90deg);
+  transform-origin: 32px 32px;
+  filter: drop-shadow(0 0 4px var(--fui-ink));
 }
-
-.s1 input[type='range']::-webkit-slider-thumb {
-  appearance: none;
-  width: 7px;
-  height: 14px;
-  background: var(--fui-ink);
-  box-shadow: 0 0 8px var(--fui-ink);
-}
-
-.s1 input[type='range']::-moz-range-thumb {
-  width: 7px;
-  height: 14px;
-  border: 0;
-  border-radius: 0;
-  background: var(--fui-ink);
-  box-shadow: 0 0 8px var(--fui-ink);
-}
-
-.s1 .scale { display: flex; justify-content: space-between; padding: 0 3px; }
-.s1 .scale i { width: 1px; height: 4px; background: var(--fui-line); }
-.s1 .scale i:nth-child(5n + 1) { height: 7px; }
-
-.s1 .toggles,
-.s1 .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.s1 .actions { grid-template-columns: 1fr 1fr; }
-
-.s1 .toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 6px;
-  border: 1px solid var(--fui-line);
-  color: var(--fui-ink-dim);
-  font-size: 11px;
-}
-
-/* Indicator lamp: unlit outline, lit and glowing when on. */
-.s1 .toggle i { width: 7px; height: 7px; border: 1px solid currentColor; transition: background var(--fui-snap); }
-.s1 .toggle:hover { background: var(--fui-faint); }
-.s1 .toggle[aria-pressed='true'] { color: var(--fui-ink); border-color: var(--fui-ink); }
-.s1 .toggle[aria-pressed='true'] i { background: currentColor; box-shadow: 0 0 6px currentColor; }
-.s1 .toggle.warn[aria-pressed='true'] { color: var(--fui-warn); border-color: var(--fui-warn); }
-
-.s1 .primary {
-  padding: 5px 6px;
-  border: 1px solid var(--fui-ink);
-  text-align: center;
-  font-size: 11px;
+.s1 .charge .core { fill: rgb(184 255 240 / 0.06); stroke: var(--fui-line); transition: fill 0.2s; }
+.s1 .charge span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
   letter-spacing: 0.14em;
 }
+.s1 .charge:hover .core { fill: rgb(184 255 240 / 0.14); }
+.s1 .charge.charging .orbit { animation: spin 0.6s linear infinite; stroke: var(--fui-ink); }
+.s1 .charge.fired .core { animation: core-flash 0.4s ease-out; }
+.s1 .charge.fired::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid var(--fui-ink);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: shockwave 0.5s ease-out forwards;
+}
 
-.s1 .primary:hover { background: var(--fui-ink); color: #06201c; box-shadow: 0 0 12px rgb(184 255 240 / 0.5); }
-.s1 .primary:active { transform: translateY(1px); }
+@keyframes core-flash { from { fill: var(--fui-ink); } }
+@keyframes shockwave { to { inset: -18px; opacity: 0; } }
+
+/* Hex switches, interlocked in a honeycomb row */
+.s1 .hexes { display: flex; padding: 0 0 22px 4px; }
+
+.s1 .hex {
+  width: 58px;
+  height: 50px;
+  padding: 1px;
+  background: var(--fui-line);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  transition: background 0.2s, filter 0.2s, transform var(--fui-snap);
+}
+
+.s1 .hex + .hex { margin-left: -13px; }
+.s1 .hex:nth-child(even) { transform: translateY(25px); }
+
+.s1 .hex span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  background: #061414;
+  clip-path: inherit;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--fui-ink-dim);
+}
+
+.s1 .hex i { width: 6px; height: 6px; border: 1px solid currentColor; transform: rotate(45deg); }
+.s1 .hex:hover { background: var(--fui-ink-dim); }
+.s1 .hex[aria-pressed='true'] { background: var(--fui-ink); filter: drop-shadow(0 0 5px rgb(184 255 240 / 0.6)); }
+.s1 .hex[aria-pressed='true'] span { color: var(--fui-ink); background: #0b2724; }
+.s1 .hex[aria-pressed='true'] i { background: currentColor; }
+.s1 .hex.warn[aria-pressed='true'] { background: var(--fui-warn); filter: drop-shadow(0 0 5px rgb(255 181 71 / 0.6)); }
+.s1 .hex.warn[aria-pressed='true'] span { color: var(--fui-warn); background: #2a1d08; }
+.s1 .hex:active { filter: brightness(1.6); }
 
 .s1 .cycle { position: relative; height: 4px; background: var(--fui-faint); }
 
@@ -262,7 +295,7 @@
   background: var(--fui-ink-dim);
 }
 
-.s1 .field.grow { flex: 1; min-height: 120px; }
+.s1 .field.grow { flex: 1; min-height: 110px; }
 .s1 .wedge { position: relative; flex: 1; border: 1px solid var(--fui-faint); }
 .s1 .wedge canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
@@ -345,12 +378,89 @@
 
 @keyframes log-in { from { opacity: 0; transform: translateX(-6px); } }
 
-@media (prefers-reduced-motion: reduce) {
-  .s1 .panel,
-  .s1 ol.log li,
-  .s1 .archive button::after { animation: none; }
-  .s1 { --fui-snap: 0.01s linear; }
+
+/* ---- motion: header rule draws in after its panel powers on ---- */
+
+.s1 .panel-head i { transform-origin: left; animation: rule-draw 0.6s cubic-bezier(0.6, 0, 0.2, 1) calc(var(--boot, 0s) + 0.3s) both; }
+.s1 .panel-head b { animation: tag-flicker 0.4s steps(4, jump-none) calc(var(--boot, 0s) + 0.15s) both; }
+
+@keyframes rule-draw { from { transform: scaleX(0); } }
+@keyframes tag-flicker { 0% { opacity: 0; } 30% { opacity: 1; } 55% { opacity: 0.2; } 100% { opacity: 1; } }
+
+/* ---- motion: glitch tear on every new synthesis ---- */
+
+.s1 .scope.glitch canvas { animation: glitch 0.26s steps(1, end); }
+
+@keyframes glitch {
+  0% { clip-path: inset(12% 0 58% 0); transform: translateX(-10px); filter: drop-shadow(3px 0 rgb(255 60 120 / 0.7)) drop-shadow(-3px 0 rgb(0 255 240 / 0.7)); }
+  20% { clip-path: inset(62% 0 8% 0); transform: translateX(8px); }
+  40% { clip-path: inset(30% 0 40% 0); transform: translateX(-4px); filter: drop-shadow(-2px 0 rgb(255 60 120 / 0.7)) drop-shadow(2px 0 rgb(0 255 240 / 0.7)); }
+  60% { clip-path: inset(0 0 80% 0); transform: translateX(6px); }
+  80% { clip-path: inset(0); transform: translateX(-2px); filter: none; }
+  100% { clip-path: none; transform: none; filter: none; }
 }
+
+/* ---- boot screen ---- */
+
+.s1 .boot {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background:
+    repeating-linear-gradient(transparent 0 2px, rgb(0 0 0 / 0.25) 2px 3px),
+    radial-gradient(circle at 50% 45%, #0a1d1f, #020405 75%);
+  animation: crt-on 0.45s cubic-bezier(0.5, 0, 0.5, 1) both;
+}
+
+.s1 .boot.exit { animation: crt-off 0.55s cubic-bezier(0.6, 0, 0.9, 0.4) forwards; }
+
+@keyframes crt-on {
+  0% { clip-path: inset(50% 50% 50% 50%); filter: brightness(4); }
+  40% { clip-path: inset(49.6% 0 49.6% 0); filter: brightness(3); }
+  100% { clip-path: inset(0); filter: none; }
+}
+
+@keyframes crt-off {
+  0% { clip-path: inset(0); filter: none; }
+  55% { clip-path: inset(49.6% 0 49.6% 0); filter: brightness(3); }
+  85% { clip-path: inset(49.6% 48% 49.6% 48%); filter: brightness(5); opacity: 1; }
+  100% { clip-path: inset(50% 50% 50% 50%); opacity: 0; }
+}
+
+.s1 .boot-inner { width: min(440px, calc(100% - 32px)); display: flex; flex-direction: column; align-items: center; }
+.s1 .boot-cube { width: 120px; height: 100px; }
+
+.s1 .boot h1 {
+  margin: 4px 0 0;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+  text-shadow: 0 0 12px rgb(184 255 240 / 0.6);
+}
+
+.s1 .boot-sub { margin: 2px 0 20px; font-size: 10px; letter-spacing: 0.3em; color: var(--fui-ink-dim); }
+
+.s1 .boot-log { width: 100%; min-height: 114px; margin: 0 0 14px; padding: 0; list-style: none; font-size: 11px; }
+.s1 .boot-log li { display: flex; gap: 6px; align-items: baseline; animation: log-in 0.2s ease-out; }
+.s1 .boot-log span { color: var(--fui-ink-dim); white-space: nowrap; }
+.s1 .boot-log i { flex: 1; border-bottom: 1px dotted var(--fui-line); }
+.s1 .boot-log b { font-weight: 400; white-space: nowrap; }
+.s1 .boot-log b.fallback { color: var(--fui-warn); }
+.s1 .boot-log em { font-style: normal; animation: blink 0.5s steps(2, jump-none) infinite; }
+
+.s1 .boot-bar { display: grid; grid-template-columns: repeat(32, 1fr); gap: 2px; width: 100%; height: 6px; }
+.s1 .boot-bar i { background: var(--fui-faint); transition: background 0.15s; }
+.s1 .boot-bar i.on { background: var(--fui-ink); box-shadow: 0 0 6px rgb(184 255 240 / 0.6); }
+.s1 .boot.ready .boot-bar i { animation: bar-flash 0.5s steps(2, jump-none) 1; }
+
+@keyframes bar-flash { 50% { background: #fff; } }
+
+.s1 .boot-status { margin: 10px 0 0; font-size: 12px; letter-spacing: 0.3em; }
+.s1 .boot.ready .boot-status { text-shadow: 0 0 10px var(--fui-ink); animation: blink 0.25s steps(2, jump-none) 2; }
+.s1 .boot-hint { margin: 18px 0 0; font-size: 9px; letter-spacing: 0.2em; color: rgb(95 167 151 / 0.6); }
 
 /* Narrow layout overrides; kept last so they win over the base rules above. */
 @media (max-width: 900px) {
@@ -364,4 +474,18 @@
   .s1 .field.grow { min-height: 180px; }
   .s1 .archive { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 110px; }
   .s1 .topbar .dim { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s1 .panel,
+  .s1 .panel-head i,
+  .s1 .panel-head b,
+  .s1 .boot,
+  .s1 .boot-log li,
+  .s1 .dial .spin,
+  .s1 ol.log li,
+  .s1 .boot.exit,
+  .s1 .scope.glitch canvas,
+  .s1 .archive button::after { animation: none; }
+  .s1 { --fui-snap: 0.01s linear; }
 }
