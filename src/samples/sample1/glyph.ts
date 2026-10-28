@@ -19,6 +19,17 @@ export type Glyph = {
 
 export type Copy = { rot: number; flip: boolean };
 
+export type GenOptions = {
+  order: 'auto' | number;
+  /** Number of grid walks. */
+  density: number;
+  rings: boolean;
+  ticks: boolean;
+  spokes: boolean;
+};
+
+export const ORDERS = [1, 2, 3, 4, 6, 8];
+
 const GRID = 1 / 8;
 const DIRS: V[] = [
   [1, 0],
@@ -30,7 +41,6 @@ const DIRS: V[] = [
   [0, -1],
   [1, -1],
 ];
-const ORDERS = [1, 2, 3, 4, 6, 8];
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -62,12 +72,17 @@ function lengthOf(lines: V[][]) {
  * Builds the source wedge: the region 0 <= angle <= PI/n inside the unit circle.
  * Everything else is produced by reflecting and rotating this wedge (see `copies`).
  */
-export function generate(seed: number): Glyph {
-  const rand = mulberry32(seed);
-  const int = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
-  const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)];
+export function generate(seed: number, opts: GenOptions): Glyph {
+  // Each feature draws from its own stream, so toggling one layer leaves the others unchanged.
+  const stream = (salt: number) => {
+    const rand = mulberry32(seed ^ Math.imul(salt, 0x9e3779b1));
+    const int = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
+    const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)];
+    return { rand, int, pick };
+  };
 
-  const n = pick(ORDERS);
+  const auto = stream(1).pick(ORDERS);
+  const n = opts.order === 'auto' ? auto : opts.order;
   const w = Math.PI / n;
   const inside = ([x, y]: V) => {
     const r = Math.hypot(x, y);
@@ -83,15 +98,19 @@ export function generate(seed: number): Glyph {
   };
 
   // Ring segments. Starting on the mirror axis makes the reflected copy continue the arc.
-  const slices = 6;
-  for (let i = int(1, 3); i > 0; i--) {
-    const s0 = rand() < 0.5 ? 0 : int(0, slices - 1);
-    const s1 = int(s0 + 1, slices);
-    add([arc(int(3, 10) / 10, (s0 * w) / slices, (s1 * w) / slices)], 0.7);
+  if (opts.rings) {
+    const { rand, int } = stream(2);
+    const slices = 6;
+    for (let i = int(1, 3); i > 0; i--) {
+      const s0 = rand() < 0.5 ? 0 : int(0, slices - 1);
+      const s1 = int(s0 + 1, slices);
+      add([arc(int(3, 10) / 10, (s0 * w) / slices, (s1 * w) / slices)], 0.7);
+    }
   }
 
   // Tick band: short radial marks spread across the wedge.
-  if (rand() < 0.6) {
+  if (opts.ticks) {
+    const { int } = stream(3);
     const r = int(4, 9) / 10;
     const count = int(3, 6);
     add(
@@ -104,14 +123,19 @@ export function generate(seed: number): Glyph {
   }
 
   // Spokes on a mirror axis map onto themselves, which reads as a structural axis.
-  for (let i = int(0, 2); i > 0; i--) {
-    const a = rand() < 0.5 ? 0 : w;
-    const r = int(1, 5) / 10;
-    add([[polar(r, a), polar(Math.min(1, r + int(2, 4) / 10), a)]], 0.8);
+  if (opts.spokes) {
+    const { rand, int } = stream(4);
+    for (let i = int(1, 2); i > 0; i--) {
+      const a = rand() < 0.5 ? 0 : w;
+      const r = int(1, 5) / 10;
+      add([[polar(r, a), polar(Math.min(1, r + int(2, 4) / 10), a)]], 0.8);
+    }
   }
 
   // Grid-snapped walks at 45° increments: the circuit-like strokes.
-  for (let i = int(3, 6); i > 0; i--) {
+  // One shared stream, so raising the density keeps the earlier walks.
+  const { int, pick } = stream(5);
+  for (let i = opts.density; i > 0; i--) {
     for (let tries = 0; tries < 20; tries++) {
       const start: V = [int(-8, 8) * GRID, int(0, 8) * GRID];
       if (!inside(start)) continue;
@@ -137,6 +161,30 @@ export function generate(seed: number): Glyph {
 
   prims.sort((a, b) => a.r0 - b.r0);
   return { seed, n, prims };
+}
+
+/** Stroke length per angle bin over the whole glyph, normalized to the peak. */
+export function angularProfile(glyph: Glyph, bins: number): number[] {
+  const out = new Array<number>(bins).fill(0);
+  const tau = Math.PI * 2;
+  for (const c of copies(glyph.n))
+    for (const prim of glyph.prims)
+      for (const line of prim.lines)
+        for (let i = 1; i < line.length; i++) {
+          const [ax, ay] = line[i - 1];
+          const [bx, by] = line[i];
+          const seg = Math.hypot(bx - ax, by - ay);
+          const steps = Math.max(1, Math.ceil(seg / 0.02));
+          for (let s = 0; s < steps; s++) {
+            const f = (s + 0.5) / steps;
+            const x = ax + (bx - ax) * f;
+            const y = (ay + (by - ay) * f) * (c.flip ? -1 : 1);
+            const a = (((Math.atan2(y, x) + c.rot) % tau) + tau) % tau;
+            out[Math.floor((a / tau) * bins) % bins] += (prim.alpha * seg) / steps;
+          }
+        }
+  const peak = Math.max(...out, 1e-6);
+  return out.map((v) => v / peak);
 }
 
 /** The 2n elements of D_n, ordered so the copies sweep counter-clockwise from the source. */
