@@ -1,0 +1,81 @@
+/* FUI tokens (fui-design §6), scoped to this sample. Keep INK / INK_DIM in index.ts in sync. */
+.s1 {
+  --fui-ink: #b8fff0;
+  --fui-ink-dim: #5fa797;
+  --fui-line: rgb(184 255 240 / 0.3);
+  --fui-mono: 'Share Tech Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 47%, #08181a, #030607 70%);
+  color: var(--fui-ink);
+  font-family: var(--fui-mono);
+  cursor: crosshair;
+  user-select: none;
+}
+
+.s1 canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.s1 .micro {
+  position: absolute;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--fui-ink-dim);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.s1 .micro.tl { top: 6px; left: 22px; }
+.s1 .micro.tr { top: 6px; right: 22px; }
+.s1 .micro.bl { bottom: 5px; left: 22px; }
+.s1 .micro.br { bottom: 5px; right: 22px; }
+
+.s1 .panel-head {
+  position: absolute;
+  top: 26px;
+  left: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, calc(100% - 44px));
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.s1 .panel-head b {
+  padding: 0 4px;
+  font-weight: 400;
+  background: var(--fui-ink);
+  color: #06201c;
+}
+
+.s1 .panel-head i {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--fui-line), transparent);
+}
+
+.s1 .status {
+  position: absolute;
+  bottom: 7%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  pointer-events: none;
+}
+
+.s1 .status small {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--fui-ink-dim);
+}
