@@ -1,5 +1,5 @@
 import { Flat, type Surfaces } from './stage';
-import { H, W, sceneAtTheta, type Scene } from './scenes';
+import { H, sceneAtTheta, type Scene } from './scenes';
 import { Script } from './script';
 
 const FLOOR = H / 2;
@@ -24,12 +24,10 @@ export function Sign({ x, z, dir, theta, onClick }: { x: number; z: number; dir:
   );
 }
 
-export const placeholderSurfaces = (wall: string, floor: string, ceiling: string): Surfaces => ({
-  ceiling,
-  spine: wall,
-  wall: <div className="s2-tex" style={{ width: '100%', height: '100%', background: wall }} />,
-  floor: <div className="s2-tex" style={{ width: '100%', height: '100%', background: floor }} />,
-});
+export const placeholderSurfaces = (wall: string, floor: string, ceiling: string): Surfaces => {
+  const paint = (background: string) => <div className="s2-tex" style={{ width: '100%', height: '100%', background }} />;
+  return { ceiling, back: paint(wall), side: paint(wall), floor: paint(floor) };
+};
 
 /** A compartment that is not built yet: its title card plus the two signs, so the loop is navigable. */
 export function Placeholder({ scene, go }: { scene: Scene; go: (dir: -1 | 1) => void }) {
@@ -49,19 +47,21 @@ export function Placeholder({ scene, go }: { scene: Scene; go: (dir: -1 | 1) => 
   );
 }
 
-/** The lid's night sky, laid flat and facing up. Placeholder until scene 05 is built. */
+export const atticSurfaces = placeholderSurfaces('#141a3a', '#10152f', '#10152f');
+
+/** The attic's night sky, seen down through the lid. Placeholder until scene 05 is built. */
 export function AtticSky({ scene, down }: { scene: Scene; down: () => void }) {
   const stars = [
-    [-260, -240, 30],
-    [-120, -300, 50],
-    [180, -260, 20],
-    [290, -120, 40],
-    [-300, 60, 60],
-    [240, 180, 30],
+    [-260, -240, 120],
+    [-120, -300, 200],
+    [180, -260, 90],
+    [290, -120, 260],
+    [-300, 60, 320],
+    [240, 180, 160],
+    [60, -60, 60],
   ];
   return (
     <>
-      <div className="s2-surface s2-lid" style={{ left: -W / 2, top: -W / 2, width: W, height: W }} />
       {stars.map(([x, y, z], i) => (
         <Flat key={i} x={x} y={y} z={z} w={28} h={28}>
           <svg viewBox="0 0 28 28" width={28} height={28}>
@@ -69,14 +69,14 @@ export function AtticSky({ scene, down }: { scene: Scene; down: () => void }) {
           </svg>
         </Flat>
       ))}
-      <Flat x={0} y={-120} z={60} w={260} h={150}>
+      <Flat x={0} y={-120} z={330} w={260} h={150}>
         <div className="s2-card s2-card-night">
           <Script text={pad2(scene.num)} size={18} />
           <Script text={scene.name} size={26} />
           <Script text="準備中" size={14} className="s2-dim" />
         </div>
       </Flat>
-      <Flat x={0} y={150} z={60} w={120} h={110} onClick={down} label="舞台へ戻る" className="s2-sign">
+      <Flat x={0} y={150} z={350} w={120} h={110} onClick={down} label="舞台へ戻る" className="s2-sign">
         <svg viewBox="0 0 120 110" width={120} height={110}>
           <polygon points="60,108 8,54 34,54 34,4 86,4 86,54 112,54" fill="#c9a86a" transform="translate(0 4)" />
           <polygon points="60,108 8,54 34,54 34,4 86,4 86,54 112,54" fill="#f2d39c" />

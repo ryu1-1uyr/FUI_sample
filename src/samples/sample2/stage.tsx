@@ -1,15 +1,17 @@
 import type { CSSProperties, ReactNode, Ref } from 'react';
-import { H, T, W } from './scenes';
+import { D, H, T, W } from './scenes';
 
-// Geometry of the box. Each compartment has its own frame: x right, y down (ceiling -H/2,
-// floor +H/2), z toward its open face (0 at the turntable axis, W/2 at the opening). A flat
-// at depth z must stay within |x| < z or it pokes through the diagonal dividers.
+// Geometry. The box is a W x H x W cube whose four sides and lid are windows. Behind each
+// window is its own room, deeper than the box itself (D > W/2): a fictional box. The rooms
+// overlap in space, so each is drawn as seen through its window (see `aimPortal`).
+//
+// Room frame: x right, y down (ceiling -H/2, floor +H/2), z toward the window, which sits at
+// z = W/2; the back wall is at z = W/2 - D.
 
-const DIAG = W / Math.SQRT2;
-const SPINE = 20;
+const FRONT = W / 2;
 
 type FlatProps = {
-  /** Centre x, top y and depth z of the cut-out in its compartment frame. */
+  /** Centre x, top y and depth z of the cut-out in its room frame. */
   x: number;
   y: number;
   z: number;
@@ -25,8 +27,8 @@ type FlatProps = {
   grounded?: boolean;
 };
 
-/** Aerial perspective: 0 at the opening, 1 at the axis. Far layers fade toward the air. */
-const fogAt = (z: number) => Math.min(1, Math.max(0, (W / 2 - z) / (W / 2)));
+/** Aerial perspective: 0 at the window, 1 at the back wall. Far layers fade toward the air. */
+const fogAt = (z: number) => Math.min(1, Math.max(0, (FRONT - z) / D));
 
 /**
  * One paper cut-out standing parallel to the opening. The outer element carries the 3D
@@ -74,12 +76,61 @@ export function Flat({ x, y, z, w, h, className = '', style, children, onClick, 
 }
 
 export type Surfaces = {
-  wall: ReactNode;
+  back: ReactNode;
+  /** Art for both side walls, drawn with the window on its left; the right wall is mirrored. */
+  side: ReactNode;
   floor: ReactNode;
   ceiling: string;
-  /** Background of the strip covering the seam where the two dividers meet at the axis. */
-  spine: string;
 };
+
+/**
+ * A window onto a room. The window element is its own perspective container; `aimPortal`
+ * puts that perspective's eye where the stage camera is, so the flattened room is exactly
+ * what the camera would see through the opening (an off-axis projection onto the window).
+ */
+function Portal({
+  w,
+  h,
+  depth,
+  surfaces,
+  transform,
+  children,
+}: {
+  w: number;
+  h: number;
+  depth: number;
+  surfaces: Surfaces;
+  transform: string;
+  children: ReactNode;
+}) {
+  // Each surface is drawn a little oversize so the room's corners overlap instead of leaving a seam.
+  const box = (width: number, height: number, t: string, content?: ReactNode, background?: string) => (
+    <div
+      className="s2-surface"
+      style={{ left: -width / 2 - 2, top: -height / 2 - 2, width: width + 4, height: height + 4, transform: t, background }}
+    >
+      {content}
+    </div>
+  );
+  const mid = FRONT - depth / 2;
+  return (
+    <div className="s2-portal" style={{ width: w, height: h, left: -w / 2, top: -h / 2, transform }}>
+      <div className="s2-room" style={{ left: w / 2, top: h / 2, transform: `translateZ(${-FRONT}px)` }}>
+        {box(w, h, `translateZ(${FRONT - depth}px)`, surfaces.back)}
+        {box(w, depth, `translate3d(0, ${h / 2}px, ${mid}px) rotateX(90deg)`, surfaces.floor)}
+        {box(w, depth, `translate3d(0, ${-h / 2}px, ${mid}px) rotateX(-90deg)`, undefined, surfaces.ceiling)}
+        {box(depth, h, `translate3d(${-w / 2}px, 0, ${mid}px) rotateY(90deg)`, surfaces.side)}
+        {box(
+          depth,
+          h,
+          `translate3d(${w / 2}px, 0, ${mid}px) rotateY(-90deg)`,
+          <div style={{ width: '100%', height: '100%', transform: 'scaleX(-1)' }}>{surfaces.side}</div>,
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
 
 type CompartmentProps = {
   theta: number;
@@ -88,69 +139,20 @@ type CompartmentProps = {
   ref?: Ref<HTMLDivElement>;
 };
 
-/** One wedge of the turntable: floor, ceiling, the two dividers, the cut edges, and its flats. */
+/** One side of the box: the window onto its room, framed by the cut cardboard edges. */
 export function Compartment({ theta, surfaces, children, ref }: CompartmentProps) {
   return (
     <div ref={ref} className="s2-comp" style={{ transform: `rotateY(${theta}deg)` }}>
-      <div
-        className="s2-surface"
-        style={{
-          left: -W / 2,
-          top: -W / 2,
-          width: W,
-          height: W,
-          transform: `translateY(${H / 2}px) rotateX(90deg)`,
-          clipPath: 'polygon(0 100%, 100% 100%, 50% 50%)',
-        }}
-      >
-        {surfaces.floor}
-      </div>
-      <div
-        className="s2-surface"
-        style={{
-          left: -W / 2,
-          top: -W / 2,
-          width: W,
-          height: W,
-          transform: `translateY(${-H / 2}px) rotateX(-90deg)`,
-          clipPath: 'polygon(0 0, 100% 0, 50% 50%)',
-          background: surfaces.ceiling,
-        }}
-      />
-      {([45, -45] as const).map((a) => (
-        <div
-          key={a}
-          className="s2-surface"
-          style={{
-            left: -DIAG / 2,
-            top: -H / 2,
-            width: DIAG,
-            height: H,
-            // The left divider runs from the front-left corner to the axis; the right one mirrors it.
-            transform: `translate3d(${a > 0 ? -W / 4 : W / 4}px, 0, ${W / 4}px) rotateY(${a}deg) translateZ(0.5px)`,
-          }}
-        >
-          <div style={{ width: '100%', height: '100%', transform: a < 0 ? 'scaleX(-1)' : undefined }}>
-            {surfaces.wall}
-          </div>
-        </div>
-      ))}
-      {/* One face of a square pillar on the axis. Its edges tuck just past the dividers to close
-          the seam at the apex; the overlap would show in the neighbours, so only compartments
-          in view keep their face (see .s2-pillar). */}
-      <div
-        className="s2-surface s2-pillar"
-        style={{ left: -SPINE - 3, top: -H / 2, width: 2 * SPINE + 6, height: H, transform: `translateZ(${SPINE}px)` }}
-      >
-        <div className="s2-tex" style={{ width: '100%', height: '100%', background: surfaces.spine }} />
-      </div>
+      <Portal w={W} h={H} depth={D} surfaces={surfaces} transform={`translateZ(${FRONT}px)`}>
+        {children}
+      </Portal>
       <div
         className="s2-surface s2-edge"
-        style={{ left: -W / 2, top: H / 2, width: W, height: T, transform: `translateZ(${W / 2}px)` }}
+        style={{ left: -W / 2, top: H / 2, width: W, height: T, transform: `translateZ(${FRONT}px)` }}
       />
       <div
         className="s2-surface s2-edge"
-        style={{ left: -W / 2, top: -H / 2 - T, width: W, height: T, transform: `translateZ(${W / 2}px)` }}
+        style={{ left: -W / 2, top: -H / 2 - T, width: W, height: T, transform: `translateZ(${FRONT}px)` }}
       />
       <div
         className="s2-surface s2-edge s2-post"
@@ -162,18 +164,43 @@ export function Compartment({ theta, surfaces, children, ref }: CompartmentProps
           transform: `translate3d(${W / 2}px, 0, ${W / 2}px) rotateY(45deg)`,
         }}
       />
-      {children}
     </div>
   );
 }
 
-/** The lid. Its frame faces up: z rises toward the sky, y runs from the back (-W/2) to the front. */
-export function Attic({ children, ref }: { children: ReactNode; ref?: Ref<HTMLDivElement> }) {
+/** Depth of the attic room below the lid. */
+export const ATTIC_D = 360;
+/** The lid sits on top of the cut edges. */
+export const LID = H / 2 + T;
+
+/**
+ * The lid: a window facing up onto a room that drops into the box. Its frame is turned so
+ * y runs from the back of the box (-W/2) to the front.
+ */
+export function Attic({ surfaces, children, ref }: { surfaces: Surfaces; children: ReactNode; ref?: Ref<HTMLDivElement> }) {
   return (
-    <div ref={ref} className="s2-comp" style={{ transform: `rotateX(90deg) translateZ(${H / 2 + T}px)` }}>
-      {children}
+    <div ref={ref} className="s2-comp">
+      <Portal w={W} h={W} depth={ATTIC_D} surfaces={surfaces} transform={`rotateX(90deg) translateZ(${LID}px)`}>
+        {children}
+      </Portal>
     </div>
   );
+}
+
+/**
+ * Moves a portal's perspective eye to the camera. `toWindow` maps the window's top-left
+ * local frame to the view's frame; the camera's position in that frame gives the eye
+ * distance (perspective) and the foot of the eye on the window (perspective-origin).
+ */
+export function aimPortal(el: HTMLElement, toWindow: DOMMatrix, camera: DOMPoint) {
+  const c = toWindow.inverse().transformPoint(camera);
+  if (c.z < 1) {
+    el.style.visibility = 'hidden';
+    return;
+  }
+  el.style.visibility = '';
+  el.style.perspective = `${c.z.toFixed(2)}px`;
+  el.style.perspectiveOrigin = `${c.x.toFixed(2)}px ${c.y.toFixed(2)}px`;
 }
 
 /** Hanging cut-out: a chain from the ceiling down to `children`, swinging about the hook. */

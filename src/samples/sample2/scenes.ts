@@ -27,8 +27,10 @@ export const sceneById = (id: SceneId) => SCENES.find((s) => s.id === id)!;
 export const sceneAtTheta = (theta: number) =>
   SCENES.find((s) => s.theta === ((theta % 360) + 360) % 360)!;
 
-/** Box size in CSS px. The turntable is square in plan, so each compartment is a W/2-deep wedge. */
+/** Box size in CSS px: a W x H x W cube. */
 export const W = 800;
 export const H = 520;
+/** Depth of each side's room. Deeper than half the box on purpose: the box is fictional. */
+export const D = 620;
 /** Cardboard thickness shown on the cut edges. */
 export const T = 16;

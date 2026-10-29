@@ -2,14 +2,17 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Ref 
 import { createRoot } from 'react-dom/client';
 import type { Mount } from '../../types';
 import { clamp01, mixHex, reduced, settled, spring, stepSpring, wrapDeg } from './motion';
-import { AtticSky, Placeholder, placeholderSurfaces } from './props';
+import { AtticSky, Placeholder, atticSurfaces, placeholderSurfaces } from './props';
 import { Storefront, storefrontSurfaces } from './scene01';
-import { H, SCENES, T, W, sceneAtTheta, sceneById, type Scene, type SceneId } from './scenes';
+import { H, SCENES, W, sceneAtTheta, sceneById, type Scene, type SceneId } from './scenes';
 import { Script, clearLoupe, updateLoupe } from './script';
-import { Attic, Compartment } from './stage';
+import { Attic, Compartment, LID, aimPortal } from './stage';
 import './style.css';
 
 const DEG = Math.PI / 180;
+/** Stage camera. The portals need the same numbers to aim their own perspectives at it. */
+const VIEW = { w: 1180, h: 760, perspective: 1150, eyeY: 0.26, pivotY: 0.54 };
+const CAMERA = new DOMPoint(VIEW.w / 2, VIEW.h * VIEW.eyeY, VIEW.perspective);
 const LENS = 62;
 const STUBS = 5;
 /** Perceptual duration (s) and bounce of a quarter turn: a paper toy, so a little play. */
@@ -337,10 +340,30 @@ function App() {
 
       const up = clamp01(-pitch.x / 90);
       // Exaggerated on purpose: the box turns toward the pointer far enough to show its side.
-      tiltRef.current!.style.transform = `rotateX(${(-p.sy * TILT[p.sy < 0 ? 1 : 2]).toFixed(3)}deg) rotateY(${(-p.sx * TILT[0]).toFixed(3)}deg)`;
+      const tiltX = -p.sy * TILT[p.sy < 0 ? 1 : 2];
+      const tiltY = -p.sx * TILT[0];
+      tiltRef.current!.style.transform = `rotateX(${tiltX.toFixed(3)}deg) rotateY(${tiltY.toFixed(3)}deg)`;
       // Keep the open face (or the lid, when lifted) on the z = 0 plane so it is shown at its true size.
-      boxRef.current!.style.transform = `translateZ(${(-W / 2 + up * (W / 2 - H / 2 - T)).toFixed(2)}px) rotateX(${pitch.x.toFixed(3)}deg)`;
+      const tz = -W / 2 + up * (W / 2 - LID);
+      boxRef.current!.style.transform = `translateZ(${tz.toFixed(2)}px) rotateX(${pitch.x.toFixed(3)}deg)`;
       tableRef.current!.style.transform = `rotateY(${yaw.x.toFixed(3)}deg)`;
+
+      // Same chain as the DOM above, so each window knows where the camera is.
+      const box = new DOMMatrix()
+        .translateSelf(VIEW.w / 2, VIEW.h * VIEW.pivotY, 0)
+        .rotateAxisAngleSelf(1, 0, 0, tiltX)
+        .rotateAxisAngleSelf(0, 1, 0, tiltY)
+        .translateSelf(0, 0, tz)
+        .rotateAxisAngleSelf(1, 0, 0, pitch.x);
+      for (const s of SCENES) {
+        const el = compRefs.current.get(s.id)?.firstElementChild as HTMLElement | null;
+        if (!el) continue;
+        const toWindow =
+          s.theta === null
+            ? box.rotateAxisAngle(1, 0, 0, 90).translate(0, 0, LID).translate(-W / 2, -W / 2, 0)
+            : box.rotateAxisAngle(0, 1, 0, yaw.x + s.theta).translate(0, 0, W / 2).translate(-W / 2, -H / 2, 0);
+        aimPortal(el, toWindow, CAMERA);
+      }
       discRef.current!.style.transform = `rotate(${(-yaw.x).toFixed(3)}deg)`;
 
       // Light each compartment by how squarely it faces the camera; the backdrop takes the mood
@@ -362,7 +385,6 @@ function App() {
           el.style.setProperty('--lit', l.toFixed(3));
         }
         el.toggleAttribute('data-live', weights[i] > 0.9);
-        el.toggleAttribute('data-front', weights[i] > 0.3);
       });
 
       if (movingRef.current && settled(yaw) && settled(pitch)) {
@@ -403,8 +425,18 @@ function App() {
     <div className={`s2${loupe ? ' s2-holding' : ''}`} ref={rootRef} style={{ '--lens': `${LENS}px` } as CSSProperties}>
       <PaperDefs />
       <div className="s2-backdrop s2-tex" />
-      <div className="s2-view" ref={viewRef}>
-        <div className="s2-tilt" ref={tiltRef}>
+      <div
+        className="s2-view"
+        ref={viewRef}
+        style={{
+          width: VIEW.w,
+          height: VIEW.h,
+          margin: `${-VIEW.h / 2}px 0 0 ${-VIEW.w / 2}px`,
+          perspective: VIEW.perspective,
+          perspectiveOrigin: `50% ${VIEW.eyeY * 100}%`,
+        }}
+      >
+        <div className="s2-tilt" ref={tiltRef} style={{ top: `${VIEW.pivotY * 100}%` }}>
           <div className="s2-box" ref={boxRef}>
             <div className="s2-table" ref={tableRef}>
               <Compartment theta={0} surfaces={storefrontSurfaces} ref={setComp('s01')}>
@@ -420,7 +452,7 @@ function App() {
                 <Placeholder scene={s04} go={turn} />
               </Compartment>
             </div>
-            <Attic ref={setComp('s05')}>
+            <Attic surfaces={atticSurfaces} ref={setComp('s05')}>
               <AtticSky scene={sceneById('s05')} down={toFront} />
             </Attic>
           </div>

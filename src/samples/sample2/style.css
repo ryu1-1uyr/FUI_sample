@@ -49,17 +49,11 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 1180px;
-  height: 760px;
-  margin: -380px 0 0 -590px;
   transform: scale(var(--fit, 1));
-  perspective: 1150px;
-  perspective-origin: 50% 26%;
 }
 
 .s2-tilt {
   position: absolute;
-  top: 54%;
   left: 50%;
   transform-style: preserve-3d;
 }
@@ -121,12 +115,15 @@
     inset -3px 0 0 #b88f63;
 }
 
-.s2-comp:not([data-front]) .s2-pillar {
-  visibility: hidden;
+.s2-portal {
+  position: absolute;
+  overflow: hidden;
+  backface-visibility: hidden;
 }
 
-.s2-lid {
-  background: radial-gradient(circle at 30% 30%, #1e2650, #131936 70%);
+.s2-room {
+  position: absolute;
+  transform-style: preserve-3d;
 }
 
 /* Clickable cut-outs lift toward the camera; hit-testing follows the 3D transform. */
