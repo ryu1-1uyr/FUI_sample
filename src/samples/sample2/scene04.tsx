@@ -1,6 +1,6 @@
 import { Flat, Hanger, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
-import { SideDoor } from './props';
+import { BookStack } from './props';
 
 // 04 // The archive and the dispatch desk, early morning. Finished stories are shelved as books;
 // ordered ones wait wrapped on the counter, and paper birds carry letters up to the attic.
@@ -147,21 +147,30 @@ export function Archive({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic: (
         </svg>
       </Flat>
 
-      <SideDoor side={-1} theta={180} onClick={() => go(-1)} />
-      <SideDoor side={1} theta={0} onClick={() => go(1)} />
 
-      {[
-        [-350, 120, 90],
-        [350, 100, 74],
-      ].map(([x, h, w]) => (
-        <Flat key={x} x={x} y={FLOOR - h} z={392} w={w} h={h}>
-          <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
-            {Array.from({ length: Math.floor(h / 22) }, (_, i) => (
-              <rect key={i} x={(i % 2) * 6} y={h - (i + 1) * 22} width={w - 6} height={20} rx={2} fill={SPINES[(i + (x > 0 ? 3 : 0)) % SPINES.length]} />
-            ))}
-          </svg>
-        </Flat>
-      ))}
+      <BookStack
+        x={-310}
+        theta={180}
+        onClick={() => go(-1)}
+        books={[
+          [96, 22, 70, 0, '#6f9fd8'],
+          [88, 18, 64, 6, '#e9b44c'],
+          [92, 24, 68, -4, '#d27c6c'],
+          [84, 18, 60, 3, '#7cb08a'],
+          [90, 20, 66, -7, '#c7a2d6'],
+        ]}
+      />
+      <BookStack
+        x={310}
+        theta={0}
+        onClick={() => go(1)}
+        books={[
+          [92, 24, 68, 0, '#5f8f8a'],
+          [86, 20, 62, -5, '#f2d39c'],
+          [94, 18, 70, 4, '#c7a2d6'],
+          [82, 22, 60, -2, '#e9b44c'],
+        ]}
+      />
 
       <Hanger x={-150} z={140} chain={120} size={60} period={4.3} phase={0.2} onClick={toAttic} label="天井裏の空へ">
         <Bird tone="#6f9fd8" />

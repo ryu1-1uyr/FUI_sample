@@ -1,10 +1,11 @@
-import { Flat, Hanger, type Surfaces } from './stage';
+import { Cuboid, Flat, Hanger, Part, Solid, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
-import { SideDoor, Star } from './props';
+import { DestTag, Star, destLabel } from './props';
 
 // 03 // The tailoring room, inside the shop at dusk. Gathered seeds are cut into shapes at the
 // bench (the storymonger has just stepped out; their hat is on the peg) and finished pieces
-// dry on a line. The back door leads out to the storefront, the side doors to the neighbours.
+// dry on a line. The back door leads out to the storefront; the plant and the
+// crate turn the stage to the neighbours.
 
 const FLOOR = H / 2;
 const BACK = W / 2 - D;
@@ -165,25 +166,30 @@ export function Workshop({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void; t
         <Line />
       </Flat>
 
-      <SideDoor side={-1} theta={90} onClick={() => go(-1)} />
-      <SideDoor side={1} theta={270} onClick={() => go(1)} />
 
-      <Flat x={-340} y={FLOOR - 150} z={392} w={90} h={150}>
-        <svg viewBox="0 0 90 150" width={90} height={150}>
-          <path d="M45 150Q10 80 20 20Q50 60 45 150Z" fill="#5ea85a" />
-          <path d="M45 150Q80 70 76 10Q40 70 45 150Z" fill="#4f9a4c" />
-          <path d="M45 150Q30 90 50 40Q60 100 45 150Z" fill="#6bb575" />
-          <path d="M18 110H72L64 150H26Z" fill="#c9784f" />
-        </svg>
-      </Flat>
-      <Flat x={340} y={FLOOR - 90} z={390} w={110} h={90}>
-        <svg viewBox="0 0 110 90" width={110} height={90}>
-          <rect x={0} y={20} width={110} height={70} rx={4} fill="#c9a073" />
-          <rect x={0} y={20} width={110} height={14} fill="#b08860" />
-          <polygon points="20,20 40,0 50,20" fill="#fbf4e6" />
-          <circle cx={78} cy={14} r={12} fill="#ffd34f" />
-        </svg>
-      </Flat>
+      <Solid x={-300} z={366} footprint={[84, 70]} onClick={() => go(-1)} label={destLabel(90)}>
+        <Part y={-60} z={-35} w={110} h={150}>
+          <svg viewBox="0 0 110 150" width={110} height={150}>
+            <path d="M55 150Q15 80 26 18Q60 60 55 150Z" fill="#5ea85a" />
+            <path d="M55 150Q96 70 90 8Q50 70 55 150Z" fill="#4f9a4c" />
+            <path d="M55 150Q38 90 60 36Q72 100 55 150Z" fill="#6bb575" />
+          </svg>
+        </Part>
+        <Cuboid y={-70} w={84} h={70} d={70} front="#c9784f" top="#6b452e" side="#b0663f" frontArt={<DestTag theta={90} />} />
+      </Solid>
+      <Solid x={300} z={366} footprint={[130, 100]} onClick={() => go(1)} label={destLabel(270)}>
+        <Part y={-80} z={-50} w={44} h={44}>
+          <svg viewBox="0 0 44 44" width={44} height={44}>
+            <Star size={44} />
+          </svg>
+        </Part>
+        <Part x={-30} y={-90} z={-70} w={40} h={40}>
+          <svg viewBox="0 0 40 40" width={40} height={40}>
+            <polygon points="0,40 20,0 40,40" fill="#fbf4e6" />
+          </svg>
+        </Part>
+        <Cuboid y={-96} w={130} h={96} d={100} front="#c9a073" top="#8a6a4a" side="#b88f63" frontArt={<DestTag theta={270} />} />
+      </Solid>
 
       <Hanger x={-140} z={180} chain={70} size={60} period={5} phase={0.3} onClick={toAttic} label="天井裏の空へ">
         <path d="M4 30A26 26 0 0 1 56 30Z" fill="#5f8f8a" />

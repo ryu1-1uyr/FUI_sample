@@ -168,42 +168,118 @@ export function Compartment({ theta, surfaces, children, ref }: CompartmentProps
   );
 }
 
+/** One paper face of a solid. The face element is lit; its child carries the paper grain. */
+function Face({ w, h, t, shade, children }: { w: number; h: number; t: string; shade: number; children: ReactNode }) {
+  return (
+    <div className="s2-face" style={{ left: -w / 2, top: -h / 2, width: w, height: h, transform: t, '--shade': shade } as CSSProperties}>
+      {children}
+    </div>
+  );
+}
+
+const fill = (background: string, content?: ReactNode) => (
+  <div className="s2-tex" style={{ width: '100%', height: '100%', background }}>
+    {content}
+  </div>
+);
+
 /**
- * A cut-out pasted on a side wall (`side` -1 = left, 1 = right), centred at depth z. Its
- * local x runs along the wall; hover lifts it off the wall toward the room.
+ * A paper box w x h x d, placed relative to its Solid: x centre, y top, z front face,
+ * optionally turned by `turn` degrees about its vertical axis. The top is lit brighter and the
+ * sides darker, which is most of what makes it read as solid.
  */
-export function WallFlat({
-  side,
-  z,
+export function Cuboid({
+  x = 0,
   y,
+  z = 0,
   w,
   h,
+  d,
+  turn = 0,
+  front,
+  top,
+  side,
+  frontArt,
+}: {
+  x?: number;
+  y: number;
+  z?: number;
+  w: number;
+  h: number;
+  d: number;
+  turn?: number;
+  front: string;
+  top: string;
+  side: string;
+  frontArt?: ReactNode;
+}) {
+  return (
+    <div className="s2-cuboid" style={{ transform: `translate3d(${x}px, ${y + h / 2}px, ${z - d / 2}px) rotateY(${turn}deg)` }}>
+      <Face w={w} h={h} t={`translateZ(${d / 2}px)`} shade={1}>
+        {fill(front, frontArt)}
+      </Face>
+      <Face w={w} h={d} t={`translateY(${-h / 2}px) rotateX(90deg)`} shade={1.1}>
+        {fill(top)}
+      </Face>
+      <Face w={d} h={h} t={`translateX(${-w / 2}px) rotateY(-90deg)`} shade={0.8}>
+        {fill(side)}
+      </Face>
+      <Face w={d} h={h} t={`translateX(${w / 2}px) rotateY(90deg)`} shade={0.8}>
+        {fill(side)}
+      </Face>
+    </div>
+  );
+}
+
+/**
+ * A free-standing solid prop on the floor at (x, z), built from Cuboids and flat parts.
+ * With onClick it is a button and hover lifts the whole thing. `footprint` sizes its shadow.
+ */
+export function Solid({
+  x,
+  z,
+  footprint,
   children,
   onClick,
   label,
 }: {
-  side: -1 | 1;
+  x: number;
   z: number;
-  y: number;
-  w: number;
-  h: number;
+  footprint: [number, number];
   children: ReactNode;
   onClick: () => void;
   label: string;
 }) {
-  const style = {
-    left: -w / 2,
-    top: y,
-    width: w,
-    height: h,
-    transform: `translate3d(${side * (W / 2 - 1)}px, 0, ${z}px) rotateY(${-side * 90}deg)`,
-    '--fog': fogAt(z).toFixed(3),
-    '--lift': `${-side * 14}px`,
-  } as CSSProperties;
+  const [fw, fd] = footprint;
   return (
-    <button type="button" className="s2-flat s2-hit s2-wall" style={style} onClick={onClick} aria-label={label}>
-      <div className="s2-paper">{children}</div>
+    <button
+      type="button"
+      className="s2-solid s2-hit"
+      style={{ left: x, top: H / 2, transform: `translateZ(${z}px)` }}
+      onClick={onClick}
+      aria-label={label}
+    >
+      <div
+        className="s2-surface s2-ground"
+        style={{
+          left: -fw * 0.7,
+          top: -fd * 0.7,
+          width: fw * 1.4,
+          height: fd * 1.4,
+          transform: `translate3d(0, -0.5px, ${-fd / 2}px) rotateX(90deg)`,
+        }}
+      />
+      {children}
     </button>
+  );
+}
+
+/** A flat part inside a Solid (leaves, a standing card), centred at x with its bottom at y. */
+export function Part({ x = 0, y, z = 0, w, h, children }: { x?: number; y: number; z?: number; w: number; h: number; children: ReactNode }) {
+  return (
+    <div className="s2-face" style={{ left: x - w / 2, top: y - h, width: w, height: h, transform: `translateZ(${z}px)` }}>
+      <div className="s2-paper">{children}</div>
+    </div>
   );
 }
 

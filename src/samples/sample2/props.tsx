@@ -1,4 +1,4 @@
-import { Flat, WallFlat, type Surfaces } from './stage';
+import { Cuboid, Flat, Part, Solid, type Surfaces } from './stage';
 import { H, sceneAtTheta } from './scenes';
 import { Script } from './script';
 
@@ -48,25 +48,36 @@ export function Sign({ x, z, dir, theta, onClick }: { x: number; z: number; dir:
   );
 }
 
-/**
- * Indoor counterpart of the sign: a door in a side wall, left ajar so the neighbouring
- * scene's colour shows through. The plate above names where it leads.
- */
-export function SideDoor({ side, theta, onClick }: { side: -1 | 1; theta: number; onClick: () => void }) {
+/** Destination tag for a solid prop: the numeral and name of the scene it turns the stage to. */
+export function DestTag({ theta }: { theta: number }) {
   const to = sceneAtTheta(theta);
   return (
-    <WallFlat side={side} z={160} y={FLOOR - 236} w={130} h={236} onClick={onClick} label={`${to.name}へ`}>
-      <svg viewBox="0 0 130 236" width={130} height={236}>
-        <path d="M8 236V110A57 57 0 0 1 122 110V236Z" fill="#7a5b44" />
-        <path d="M18 236V114A47 47 0 0 1 112 114V236Z" fill={to.bg} />
-        <path d="M18 236V114Q30 76 62 68L74 236Z" fill="#5f84c4" />
-        <circle cx={62} cy={166} r={4} fill="#ffd66b" />
-      </svg>
-      <div className="s2-door-plate">
-        <Script text={pad2(to.num)} size={11} />
-        <Script text={to.name} size={13} />
+    <div className="s2-dest-slot">
+      <div className="s2-dest">
+        <Script text={pad2(to.num)} size={10} />
+        <Script text={to.name} size={12} />
       </div>
-    </WallFlat>
+    </div>
+  );
+}
+
+export const destLabel = (theta: number) => `${sceneAtTheta(theta).name}へ`;
+
+type Book = [w: number, h: number, d: number, turn: number, cover: string];
+
+/** A stack of books on the floor that turns the stage; a bookmark card on top names the way. */
+export function BookStack({ x, theta, books, onClick }: { x: number; theta: number; books: Book[]; onClick: () => void }) {
+  let top = 0;
+  return (
+    <Solid x={x} z={366} footprint={[96, 70]} onClick={onClick} label={destLabel(theta)}>
+      {books.map(([w, h, d, turn, cover], i) => {
+        top -= h;
+        return <Cuboid key={i} x={(i % 2 ? 4 : -3)} y={top} w={w} h={h} d={d} turn={turn} front={cover} top={cover} side="#f6ecd8" />;
+      })}
+      <Part y={top + 4} z={-28} w={78} h={46}>
+        <DestTag theta={theta} />
+      </Part>
+    </Solid>
   );
 }
 
