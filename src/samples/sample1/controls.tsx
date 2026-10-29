@@ -1,12 +1,17 @@
 import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { FACES, X, Y, drawCube, frontFace, qAxis, qMul, qSlerp, type Q, type V3 } from './cube';
 import { clamp01, fitCanvas } from './render';
+import { clampTilt, kickTilt, type Tilt } from './tilt';
 import { now, pad, reduced, useFrame } from './util';
 
 const SNAP = 0.5;
 const DRAG_GAIN = 0.012;
 const DRAG_LIMIT = 1.2;
 const DRAG_COMMIT = 24;
+/** How much of the cube's motion carries over to the emblem's attitude. */
+const LINK = 0.45;
+const KICK = 260;
+const DEG = 180 / Math.PI;
 /** Camera tilt so the cube always reads as a solid, not a square. */
 const VIEW = qMul(qAxis(X, 0.38), qAxis(Y, -0.52));
 
@@ -14,7 +19,12 @@ const VIEW = qMul(qAxis(X, 0.38), qAxis(Y, -0.52));
 const backOut = (p: number) => 1 + 2.2 * (p - 1) ** 3 + 1.2 * (p - 1) ** 2;
 
 /** Symmetry-order selector: a cube with one order per face; the face turned to the front is the selection. */
-export function OrderCube(props: { order: 'auto' | number; autoN: number; onChange: (o: 'auto' | number) => void }) {
+export function OrderCube(props: {
+  order: 'auto' | number;
+  autoN: number;
+  tilt: Tilt;
+  onChange: (o: 'auto' | number) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const anim = useRef({
     from: FACES[0].front,
@@ -29,11 +39,15 @@ export function OrderCube(props: { order: 'auto' | number; autoN: number; onChan
     const p = reduced ? 1 : clamp01((now() - a.start) / SNAP);
     return qSlerp(a.from, a.to, backOut(p));
   };
-  const dragQ = (): Q => {
+  const dragAngles = (): [number, number] => {
     const d = anim.current.drag;
-    if (!d) return [0, 0, 0, 1];
+    if (!d) return [0, 0];
     const lim = (v: number) => Math.max(-DRAG_LIMIT, Math.min(DRAG_LIMIT, v * DRAG_GAIN));
-    return qMul(qAxis(Y, lim(d.dx)), qAxis(X, lim(d.dy)));
+    return [lim(d.dy), lim(d.dx)];
+  };
+  const dragQ = (): Q => {
+    const [ax, ay] = dragAngles();
+    return qMul(qAxis(Y, ay), qAxis(X, ax));
   };
   const rotateTo = (to: Q) => {
     const a = anim.current;
@@ -44,6 +58,7 @@ export function OrderCube(props: { order: 'auto' | number; autoN: number; onChan
   const turn = (axis: V3, sign: number) => {
     const to = qMul(qAxis(axis, (sign * Math.PI) / 2), anim.current.to);
     rotateTo(to);
+    kickTilt(props.tilt, axis === X ? sign * KICK : 0, axis === Y ? sign * KICK : 0);
     props.onChange(frontFace(to).order);
   };
 
@@ -59,7 +74,11 @@ export function OrderCube(props: { order: 'auto' | number; autoN: number; onChan
     const { width: w, height: h } = canvas;
     const t = now();
     const idle = props.order === 'auto' ? 1 : 0.35;
-    const sway = reduced ? [0, 0, 0, 1] as Q : qMul(qAxis(Y, Math.sin(t * 0.7) * 0.18 * idle), qAxis(X, Math.sin(t * 0.53) * 0.1 * idle));
+    const [sx, sy] = reduced ? [0, 0] : [Math.sin(t * 0.53) * 0.1 * idle, Math.sin(t * 0.7) * 0.18 * idle];
+    const sway = qMul(qAxis(Y, sy), qAxis(X, sx));
+    const [dx, dy] = dragAngles();
+    props.tilt.sway = [sx * DEG * LINK, sy * DEG * LINK];
+    props.tilt.cube = [clampTilt(dx * DEG * LINK), clampTilt(dy * DEG * LINK)];
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, w, h);
     drawCube(ctx, qMul(sway, qMul(VIEW, qMul(dragQ(), settled()))), w / 2, h / 2, Math.min(w, h) * 0.27, dpr);

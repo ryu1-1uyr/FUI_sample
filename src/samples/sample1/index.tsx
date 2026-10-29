@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type PointerEvent,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -27,6 +28,7 @@ import {
   timeline,
   type Timeline,
 } from './render';
+import { clampTilt, createTilt, stepTilt, type Tilt } from './tilt';
 import { clock, hex, now, pad, reduced, useFrame, useTicker, wobble } from './util';
 import './style.css';
 
@@ -39,6 +41,10 @@ const LOG_SIZE = 40;
 const FONT_URL = 'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap';
 const FONT_TIMEOUT = 3000;
 const GLITCH = 0.26;
+/** Degrees of emblem tilt per pixel of drag. */
+const DRAG_TILT = 0.18;
+
+const signed = (v: number) => `${v < 0 ? '-' : '+'}${Math.abs(v).toFixed(1).padStart(4, '0')}`;
 
 const newSeed = () => (Math.random() * 0xffffff) | 0;
 
@@ -105,6 +111,7 @@ function Console({ initialSeed }: { initialSeed: number }) {
   const startRef = useRef(now());
   const logId = useRef(0);
   const accepted = useRef(-1);
+  const tilt = useRef(createTilt()).current;
 
   const synth = useMemo<Synth>(() => {
     const glyph = generate(seed, opts);
@@ -187,7 +194,16 @@ function Console({ initialSeed }: { initialSeed: number }) {
     <>
       <TopBar hold={hold} />
       <Panel index="01" title="SIGNATURE SYNTH" boot={0} area="main" aside={`SEQ ${pad(seq, 4)}`}>
-        <Scope synth={synth} startRef={startRef} hold={hold} seq={seq} onPhase={onPhase} onCycleEnd={onCycleEnd} />
+        <Scope
+          synth={synth}
+          startRef={startRef}
+          hold={hold}
+          seq={seq}
+          tilt={tilt}
+          onPhase={onPhase}
+          onCycleEnd={onCycleEnd}
+          onLog={log}
+        />
       </Panel>
       <Panel index="02" title="PARAMETERS" boot={1} area="ctrl">
         <Controls
@@ -195,6 +211,7 @@ function Console({ initialSeed }: { initialSeed: number }) {
           hold={hold}
           synth={synth}
           startRef={startRef}
+          tilt={tilt}
           update={update}
           toggleHold={toggleHold}
           reseed={() => {
@@ -237,10 +254,16 @@ function Scope(props: {
   startRef: RefObject<number>;
   hold: boolean;
   seq: number;
+  tilt: Tilt;
   onPhase: (p: Phase) => void;
   onCycleEnd: () => void;
+  onLog: (text: string) => void;
 }) {
+  const backRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rigRef = useRef<HTMLDivElement>(null);
+  const attRef = useRef<HTMLSpanElement>(null);
+  const dragRef = useRef<{ x: number; y: number } | null>(null);
   const microRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const statusRef = useRef<HTMLSpanElement>(null);
   const state = useRef({ phase: '' as Phase | '', since: 0, shown: '', tick: -1, ended: false, synth: props.synth });
@@ -259,8 +282,11 @@ function Scope(props: {
 
   useFrame(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const back = backRef.current;
+    const rig = rigRef.current;
+    if (!canvas || !back || !rig) return;
     const ctx = canvas.getContext('2d')!;
+    const bctx = back.getContext('2d')!;
     const { glyph, copies: list, tl } = props.synth;
     const s = state.current;
     if (s.synth !== props.synth) {
@@ -282,52 +308,64 @@ function Scope(props: {
     }
 
     const dpr = fitCanvas(canvas);
+    fitCanvas(back);
     const { width: w, height: h } = canvas;
     const cx = w / 2;
     const cy = h * 0.47;
     const R = Math.min(w, h * 0.8) * 0.36;
     const wedge = Math.PI / glyph.n;
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    ctx.lineWidth = dpr;
+    // Attitude: CSS rotateX(+) pushes the top away, rotateY(+) pushes the right side away.
+    const tilt = props.tilt;
+    stepTilt(tilt, now());
+    rig.style.setProperty('--rx', `${(-tilt.x).toFixed(3)}deg`);
+    rig.style.setProperty('--ry', `${tilt.y.toFixed(3)}deg`);
+    rig.style.setProperty('--r', `${(R / dpr).toFixed(1)}px`);
+    rig.style.setProperty('--tx', tilt.x.toFixed(2));
+    rig.style.setProperty('--ty', tilt.y.toFixed(2));
+
+    for (const c of [ctx, bctx]) {
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, w, h);
+      c.lineWidth = dpr;
+    }
 
     // Measurement ring: 10° ticks, every third one long.
     const ringR = R * 1.14;
-    ctx.strokeStyle = `rgb(${INK_RGB} / 0.22)`;
-    ctx.beginPath();
-    ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.strokeStyle = `rgb(${INK_RGB} / 0.35)`;
-    ctx.beginPath();
+    bctx.strokeStyle = `rgb(${INK_RGB} / 0.22)`;
+    bctx.beginPath();
+    bctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+    bctx.stroke();
+    bctx.strokeStyle = `rgb(${INK_RGB} / 0.35)`;
+    bctx.beginPath();
     for (let k = 0; k < 36; k++) {
       const a = (k * Math.PI) / 18;
       const len = (k % 3 === 0 ? 7 : 3.5) * dpr;
-      ctx.moveTo(cx + Math.cos(a) * ringR, cy + Math.sin(a) * ringR);
-      ctx.lineTo(cx + Math.cos(a) * (ringR + len), cy + Math.sin(a) * (ringR + len));
+      bctx.moveTo(cx + Math.cos(a) * ringR, cy + Math.sin(a) * ringR);
+      bctx.lineTo(cx + Math.cos(a) * (ringR + len), cy + Math.sin(a) * (ringR + len));
     }
-    ctx.stroke();
+    bctx.stroke();
 
     // Mirror-axis markers: one inward triangle per axis ray, snapping in with the scan.
     const snap = progress(t, 0, SCAN);
-    ctx.fillStyle = `rgb(${INK_RGB} / ${0.8 * snap})`;
+    bctx.fillStyle = `rgb(${INK_RGB} / ${0.8 * snap})`;
     for (let k = 0; k < glyph.n * 2; k++) {
       const a = BASE + k * wedge;
       const r = ringR - (2 + (1 - snap) * 12) * dpr;
       const sz = 4 * dpr;
       const [ux, uy] = [Math.cos(a), Math.sin(a)];
-      ctx.beginPath();
-      ctx.moveTo(cx + ux * r, cy + uy * r);
-      ctx.lineTo(cx + ux * (r - sz * 1.6) - uy * sz, cy + uy * (r - sz * 1.6) + ux * sz);
-      ctx.lineTo(cx + ux * (r - sz * 1.6) + uy * sz, cy + uy * (r - sz * 1.6) - ux * sz);
-      ctx.fill();
+      bctx.beginPath();
+      bctx.moveTo(cx + ux * r, cy + uy * r);
+      bctx.lineTo(cx + ux * (r - sz * 1.6) - uy * sz, cy + uy * (r - sz * 1.6) + ux * sz);
+      bctx.lineTo(cx + ux * (r - sz * 1.6) + uy * sz, cy + uy * (r - sz * 1.6) - ux * sz);
+      bctx.fill();
     }
 
     if (t < SCAN) {
-      ctx.strokeStyle = `rgb(${INK_RGB} / ${0.6 * (1 - t / SCAN)})`;
-      ctx.beginPath();
-      ctx.arc(cx, cy, R * progress(t, 0, SCAN), 0, Math.PI * 2);
-      ctx.stroke();
+      bctx.strokeStyle = `rgb(${INK_RGB} / ${0.6 * (1 - t / SCAN)})`;
+      bctx.beginPath();
+      bctx.arc(cx, cy, R * progress(t, 0, SCAN), 0, Math.PI * 2);
+      bctx.stroke();
     }
 
     let alpha = 1;
@@ -339,26 +377,26 @@ function Scope(props: {
     // Source-wedge guide, visible until the reflection completes.
     const guide = 1 - clamp01((t - tl.repEnd) / GUIDE_FADE);
     if (guide > 0) {
-      ctx.strokeStyle = `rgb(${INK_RGB} / ${0.3 * guide * snap})`;
-      ctx.setLineDash([2 * dpr, 4 * dpr]);
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(BASE) * R, cy + Math.sin(BASE) * R);
-      ctx.arc(cx, cy, R, BASE, BASE + wedge);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.setLineDash([]);
+      bctx.strokeStyle = `rgb(${INK_RGB} / ${0.3 * guide * snap})`;
+      bctx.setLineDash([2 * dpr, 4 * dpr]);
+      bctx.beginPath();
+      bctx.moveTo(cx, cy);
+      bctx.lineTo(cx + Math.cos(BASE) * R, cy + Math.sin(BASE) * R);
+      bctx.arc(cx, cy, R, BASE, BASE + wedge);
+      bctx.closePath();
+      bctx.stroke();
+      bctx.setLineDash([]);
     }
 
     drawGlyph(ctx, glyph, list, { cx, cy, R, dpr, t, tl, alpha, glow: 6 });
 
-    ctx.strokeStyle = `rgb(${INK_RGB} / 0.6)`;
-    ctx.beginPath();
-    ctx.moveTo(cx - 5 * dpr, cy);
-    ctx.lineTo(cx + 5 * dpr, cy);
-    ctx.moveTo(cx, cy - 5 * dpr);
-    ctx.lineTo(cx, cy + 5 * dpr);
-    ctx.stroke();
+    bctx.strokeStyle = `rgb(${INK_RGB} / 0.6)`;
+    bctx.beginPath();
+    bctx.moveTo(cx - 5 * dpr, cy);
+    bctx.lineTo(cx + 5 * dpr, cy);
+    bctx.moveTo(cx, cy - 5 * dpr);
+    bctx.lineTo(cx, cy + 5 * dpr);
+    bctx.stroke();
 
     // Status line decodes whenever the phase changes.
     const text = phase === 'REFLECTING' ? `REFLECTING ×${list.length}` : phase;
@@ -379,12 +417,45 @@ function Scope(props: {
         built < 1 ? `BUILD ${pad(Math.round(built * 100), 3)}%` : `COHERENCE ${(0.982 + wobble(now(), glyph.seed, 0.006)).toFixed(3)}`;
       bl.textContent = `SEED ${hex(glyph.seed)} · ${list.length} COPIES · ${glyph.prims.length} PRIM`;
       br.textContent = `CYC ${clock(Math.min(t, tl.end))} / ${clock(tl.end)}`;
+      if (attRef.current) attRef.current.textContent = `ATT X${signed(tilt.x)}° · Y${signed(tilt.y)}°`;
     }
   });
 
+  // Direct manipulation: drag the emblem like a trackball; it springs back to face the operator.
+  const onDown = (e: PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { x: e.clientX, y: e.clientY };
+    rootRef.current?.classList.add('grabbing');
+  };
+  const onMove = (e: PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d) return;
+    props.tilt.drag = [clampTilt((e.clientY - d.y) * DRAG_TILT), clampTilt((e.clientX - d.x) * DRAG_TILT)];
+  };
+  const onUp = () => {
+    if (!dragRef.current) return;
+    const [x, y] = props.tilt.drag;
+    dragRef.current = null;
+    props.tilt.drag = [0, 0];
+    rootRef.current?.classList.remove('grabbing');
+    if (Math.abs(x) + Math.abs(y) > 1) props.onLog(`ATTITUDE X${signed(x)}° Y${signed(y)}° // RELEASED`);
+  };
+
   return (
-    <div className="scope" ref={rootRef}>
-      <canvas ref={canvasRef} />
+    <div
+      className="scope"
+      ref={rootRef}
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+    >
+      <div className="rig" ref={rigRef}>
+        <div className="plate" />
+        <canvas ref={backRef} className="ring" />
+        <canvas ref={canvasRef} className="emblem" />
+      </div>
+      <span className="micro tc" ref={attRef} />
       {(['tl', 'tr', 'bl', 'br'] as const).map((at, i) => (
         <span
           key={at}
@@ -406,6 +477,7 @@ function Controls(props: {
   hold: boolean;
   synth: Synth;
   startRef: RefObject<number>;
+  tilt: Tilt;
   update: (patch: Partial<GenOptions>, label: string) => void;
   toggleHold: () => void;
   reseed: () => void;
@@ -436,6 +508,7 @@ function Controls(props: {
         <OrderCube
           order={opts.order}
           autoN={props.synth.glyph.n}
+          tilt={props.tilt}
           onChange={(o) => o !== opts.order && update({ order: o }, `ORDER=${o === 'auto' ? 'AUTO' : `D${o}`}`)}
         />
       </div>
