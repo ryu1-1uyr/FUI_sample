@@ -53,8 +53,8 @@
   height: 760px;
   margin: -380px 0 0 -590px;
   transform: scale(var(--fit, 1));
-  perspective: 1700px;
-  perspective-origin: 50% 24%;
+  perspective: 1150px;
+  perspective-origin: 50% 26%;
 }
 
 .s2-tilt {
@@ -76,6 +76,14 @@
   position: absolute;
   backface-visibility: hidden;
   filter: brightness(var(--lit, 1));
+}
+
+.s2-flat {
+  filter: brightness(calc(var(--lit, 1) * (1 + var(--fog, 0) * 0.12))) saturate(calc(1 - var(--fog, 0) * 0.4));
+}
+
+.s2-ground {
+  background: radial-gradient(closest-side, rgb(30 50 20 / 0.32), rgb(30 50 20 / 0.12) 60%, transparent);
 }
 
 .s2-tex {
@@ -111,6 +119,10 @@
   box-shadow:
     inset 3px 0 0 #b88f63,
     inset -3px 0 0 #b88f63;
+}
+
+.s2-comp:not([data-front]) .s2-pillar {
+  visibility: hidden;
 }
 
 .s2-lid {

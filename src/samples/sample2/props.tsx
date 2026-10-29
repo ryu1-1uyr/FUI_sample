@@ -10,7 +10,7 @@ export function Sign({ x, z, dir, theta, onClick }: { x: number; z: number; dir:
   const to = sceneAtTheta(theta);
   const board = dir < 0 ? '8,46 34,14 142,14 142,78 34,78' : '142,46 116,14 8,14 8,78 116,78';
   return (
-    <Flat x={x} y={FLOOR - 170} z={z} w={150} h={170} onClick={onClick} label={`${to.name}へ`} className="s2-sign">
+    <Flat x={x} y={FLOOR - 170} z={z} w={150} h={170} onClick={onClick} label={`${to.name}へ`} className="s2-sign" grounded>
       <svg viewBox="0 0 150 170" width={150} height={170}>
         <rect x={67} y={60} width={16} height={110} fill="#9c6a48" />
         <polygon points={board} fill="#d9b373" transform="translate(0 5)" />

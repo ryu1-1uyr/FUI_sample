@@ -15,6 +15,9 @@ const STUBS = 5;
 /** Perceptual duration (s) and bounce of a quarter turn: a paper toy, so a little play. */
 const TURN = [1.15, 0.14] as const;
 const LIFT = [1.0, 0.08] as const;
+/** Max pointer tilt (deg): yaw, and pitch looking up / down. Looking down shows little more than
+ * the lid, so that side is kept small; yaw goes far enough to see into the side opening. */
+const TILT = [26, 7, 2.5] as const;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const mod360 = (d: number) => ((d % 360) + 360) % 360;
@@ -308,7 +311,12 @@ function App() {
         return n;
       });
     };
+    const leave = () => {
+      pointer.current.x = 0;
+      pointer.current.y = 0;
+    };
     root.addEventListener('pointermove', move);
+    root.addEventListener('pointerleave', leave);
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
 
@@ -323,12 +331,13 @@ function App() {
       stepSpring(pitch, dt, ...LIFT);
 
       const p = pointer.current;
-      const ease = reduced ? 0 : Math.min(1, dt * 3);
+      const ease = reduced ? 0 : Math.min(1, dt * 2.5);
       p.sx += (p.x - p.sx) * ease;
       p.sy += (p.y - p.sy) * ease;
 
       const up = clamp01(-pitch.x / 90);
-      tiltRef.current!.style.transform = `rotateX(${(-p.sy * 3).toFixed(3)}deg) rotateY(${(p.sx * 4).toFixed(3)}deg)`;
+      // Exaggerated on purpose: the box turns toward the pointer far enough to show its side.
+      tiltRef.current!.style.transform = `rotateX(${(-p.sy * TILT[p.sy < 0 ? 1 : 2]).toFixed(3)}deg) rotateY(${(-p.sx * TILT[0]).toFixed(3)}deg)`;
       // Keep the open face (or the lid, when lifted) on the z = 0 plane so it is shown at its true size.
       boxRef.current!.style.transform = `translateZ(${(-W / 2 + up * (W / 2 - H / 2 - T)).toFixed(2)}px) rotateX(${pitch.x.toFixed(3)}deg)`;
       tableRef.current!.style.transform = `rotateY(${yaw.x.toFixed(3)}deg)`;
@@ -353,6 +362,7 @@ function App() {
           el.style.setProperty('--lit', l.toFixed(3));
         }
         el.toggleAttribute('data-live', weights[i] > 0.9);
+        el.toggleAttribute('data-front', weights[i] > 0.3);
       });
 
       if (movingRef.current && settled(yaw) && settled(pitch)) {
@@ -374,6 +384,7 @@ function App() {
       cancelAnimationFrame(raf);
       ro.disconnect();
       root.removeEventListener('pointermove', move);
+      root.removeEventListener('pointerleave', leave);
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };

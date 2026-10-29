@@ -81,10 +81,37 @@ function Bush({ w, h }: { w: number; h: number }) {
   );
 }
 
+/** A band of grass blades spanning the wedge at depth z. Layered bands give the ground depth. */
+function Grass({ z, w, h, tone, seed }: { z: number; w: number; h: number; tone: [string, string]; seed: number }) {
+  const n = Math.round(w / 30);
+  return (
+    <Flat x={0} y={FLOOR - h} z={z} w={w} h={h}>
+      <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
+        {Array.from({ length: n }, (_, i) => {
+          const x = 10 + i * (w / n) + ((i * 37 + seed * 13) % 11);
+          const t = h * (0.5 + ((i * 53 + seed * 29) % 50) / 100);
+          return <polygon key={i} points={`${x - 9},${h} ${x},${h - t} ${x + 9},${h}`} fill={tone[i % 3 ? 0 : 1]} />;
+        })}
+      </svg>
+    </Flat>
+  );
+}
+
+/** Tall foreground clump that overlaps the frame, so the stage reads as seen past something. */
+function Tuft({ w, h }: { w: number; h: number }) {
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
+      <path d={`M${w * 0.1} ${h}Q${w * 0.05} ${h * 0.4} ${w * 0.3} 0Q${w * 0.3} ${h * 0.5} ${w * 0.45} ${h}Z`} fill="#4f9a4c" />
+      <path d={`M${w * 0.3} ${h}Q${w * 0.5} ${h * 0.2} ${w * 0.9} ${h * 0.1}Q${w * 0.65} ${h * 0.5} ${w * 0.7} ${h}Z`} fill="#5ea85a" />
+      <path d={`M${w * 0.55} ${h}Q${w * 0.75} ${h * 0.55} ${w} ${h * 0.45}Q${w * 0.85} ${h * 0.75} ${w * 0.9} ${h}Z`} fill="#468d44" />
+    </svg>
+  );
+}
+
 export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void; toAttic: () => void; toBack: () => void }) {
   return (
     <>
-      <Flat x={0} y={FLOOR - 290} z={140} w={230} h={290}>
+      <Flat x={0} y={FLOOR - 290} z={140} w={230} h={290} grounded>
         <svg viewBox="0 0 230 290" width={230} height={290}>
           <rect x={146} y={30} width={40} height={12} fill="#9e523e" />
           <rect x={152} y={40} width={28} height={70} fill="#b8644c" />
@@ -114,47 +141,47 @@ export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void;
         </div>
       </Flat>
 
-      <Flat x={-160} y={FLOOR - 210} z={230} w={120} h={210}>
+      <Flat x={-160} y={FLOOR - 210} z={230} w={120} h={210} grounded>
         <Tree w={120} h={210} tone={['#5ea96a', '#529c5f', '#6bb575']} />
       </Flat>
-      <Flat x={168} y={FLOOR - 180} z={232} w={100} h={180}>
+      <Flat x={168} y={FLOOR - 180} z={232} w={100} h={180} grounded>
         <Tree w={100} h={180} tone={['#68b071', '#5aa265', '#74bb7c']} />
       </Flat>
-      <Flat x={-230} y={FLOOR - 56} z={300} w={130} h={56}>
+      <Flat x={-230} y={FLOOR - 56} z={300} w={130} h={56} grounded>
         <Bush w={130} h={56} />
       </Flat>
-      <Flat x={232} y={FLOOR - 50} z={302} w={120} h={50}>
+      <Flat x={232} y={FLOOR - 50} z={302} w={120} h={50} grounded>
         <Bush w={120} h={50} />
       </Flat>
 
       <Sign x={-240} z={340} dir={-1} theta={270} onClick={() => go(-1)} />
       <Sign x={240} z={340} dir={1} theta={90} onClick={() => go(1)} />
 
-      <Flat x={0} y={FLOOR - 30} z={386} w={760} h={30}>
-        <svg viewBox="0 0 760 30" width={760} height={30}>
-          {Array.from({ length: 24 }, (_, i) => {
-            const x = 12 + i * 32 + ((i * 37) % 11);
-            const h = 14 + ((i * 53) % 13);
-            return <polygon key={i} points={`${x - 9},30 ${x},${30 - h} ${x + 9},30`} fill={i % 3 ? '#6fb35d' : '#5fa451'} />;
-          })}
-        </svg>
+      <Grass z={190} w={370} h={16} tone={['#97cd7c', '#8cc572']} seed={1} />
+      <Grass z={270} w={530} h={20} tone={['#82bf69', '#77b660']} seed={2} />
+      <Grass z={386} w={760} h={30} tone={['#6fb35d', '#5fa451']} seed={3} />
+      <Flat x={-352} y={FLOOR - 96} z={396} w={84} h={96}>
+        <Tuft w={84} h={96} />
+      </Flat>
+      <Flat x={350} y={FLOOR - 74} z={394} w={70} h={74}>
+        <Tuft w={70} h={74} />
       </Flat>
 
-      <Hanger x={120} z={250} chain={104} size={84} period={5.2} phase={0} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={-56} z={150} chain={176} size={34} period={3.6} phase={2.2} onClick={toAttic} label="天井裏の空へ">
+        <Star size={34} fill="#ffe27a" />
+      </Hanger>
+      <Hanger x={110} z={210} chain={116} size={84} period={5.2} phase={0} onClick={toAttic} label="天井裏の空へ">
         <path d="M54 4A36 36 0 1 0 54 72A40 40 0 0 1 54 4Z" fill="#ffe08a" transform="translate(0 -4)" />
         <circle cx={26} cy={34} r={3} fill="#e0b45a" />
       </Hanger>
-      <Hanger x={-130} z={290} chain={58} size={52} period={4.1} phase={1.3} onClick={toAttic} label="天井裏の空へ">
-        <Star size={52} />
-      </Hanger>
-      <Hanger x={-48} z={200} chain={150} size={38} period={3.6} phase={2.2} onClick={toAttic} label="天井裏の空へ">
-        <Star size={38} fill="#ffe27a" />
-      </Hanger>
-      <Hanger x={44} z={322} chain={84} size={30} period={3.2} phase={0.7} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={40} z={300} chain={92} size={30} period={3.2} phase={0.7} onClick={toAttic} label="天井裏の空へ">
         <Star size={30} fill="#ffe9a0" />
       </Hanger>
-      <Hanger x={214} z={332} chain={40} size={44} period={4.6} phase={3.1} onClick={toAttic} label="天井裏の空へ">
-        <Star size={44} />
+      <Hanger x={-150} z={362} chain={44} size={58} period={4.1} phase={1.3} onClick={toAttic} label="天井裏の空へ">
+        <Star size={58} />
+      </Hanger>
+      <Hanger x={236} z={384} chain={30} size={46} period={4.6} phase={3.1} onClick={toAttic} label="天井裏の空へ">
+        <Star size={46} />
       </Hanger>
     </>
   );
