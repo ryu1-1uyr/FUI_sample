@@ -1,5 +1,6 @@
+import type { ReactNode } from 'react';
 import { Flat, type Surfaces } from './stage';
-import { H, sceneAtTheta, type Scene } from './scenes';
+import { H, sceneAtTheta } from './scenes';
 import { Script } from './script';
 
 const FLOOR = H / 2;
@@ -15,6 +16,25 @@ const star = (cx: number, cy: number, R: number, r: number) =>
 export function Star({ size, fill = '#ffd34f' }: { size: number; fill?: string }) {
   const R = size / 2 - 1;
   return <polygon points={star(size / 2, R + 1, R, R * 0.48)} fill={fill} />;
+}
+
+/**
+ * The storymonger, 170 x 220, facing right. `children` draws what they hold, in the same
+ * coordinates (the right hand rests near 92, 114).
+ */
+export function Person({ children }: { children?: ReactNode }) {
+  return (
+    <svg viewBox="0 0 170 220" width={170} height={220}>
+      <path d="M34 220L44 112Q60 92 76 112L88 220Z" fill="#3b2f63" />
+      <path d="M44 120Q60 106 76 120L74 134Q60 124 46 134Z" fill="#e0a84a" />
+      <circle cx={60} cy={92} r={17} fill="#f1d2b4" />
+      <rect x={34} y={76} width={52} height={7} rx={3.5} fill="#2b2350" />
+      <path d="M44 78Q46 52 62 50Q76 52 76 78Z" fill="#2b2350" />
+      <path d="M70 118L92 110L94 118L74 128Z" fill="#3b2f63" />
+      {children}
+      <circle cx={92} cy={114} r={7} fill="#f1d2b4" />
+    </svg>
+  );
 }
 
 /** Tall foreground clump that overlaps the frame, so the stage reads as seen past something. */
@@ -48,64 +68,8 @@ export function Sign({ x, z, dir, theta, onClick }: { x: number; z: number; dir:
   );
 }
 
-export const placeholderSurfaces = (wall: string, floor: string, ceiling: string): Surfaces => {
+/** Flat-coloured room surfaces with the paper grain. */
+export const paintedSurfaces = (wall: string, floor: string, ceiling: string): Surfaces => {
   const paint = (background: string) => <div className="s2-tex" style={{ width: '100%', height: '100%', background }} />;
   return { ceiling, back: paint(wall), side: paint(wall), floor: paint(floor) };
 };
-
-/** A compartment that is not built yet: its title card plus the two signs, so the loop is navigable. */
-export function Placeholder({ scene, go }: { scene: Scene; go: (dir: -1 | 1) => void }) {
-  const theta = scene.theta!;
-  return (
-    <>
-      <Flat x={0} y={FLOOR - 250} z={220} w={240} h={150}>
-        <div className="s2-card">
-          <Script text={pad2(scene.num)} size={18} />
-          <Script text={scene.name} size={26} />
-          <Script text="準備中" size={14} className="s2-dim" />
-        </div>
-      </Flat>
-      <Sign x={-240} z={340} dir={-1} theta={theta - 90} onClick={() => go(-1)} />
-      <Sign x={240} z={340} dir={1} theta={theta + 90} onClick={() => go(1)} />
-    </>
-  );
-}
-
-export const atticSurfaces = placeholderSurfaces('#141a3a', '#10152f', '#10152f');
-
-/** The attic's night sky, seen down through the lid. Placeholder until scene 05 is built. */
-export function AtticSky({ scene, down }: { scene: Scene; down: () => void }) {
-  const stars = [
-    [-260, -240, 120],
-    [-120, -300, 200],
-    [180, -260, 90],
-    [290, -120, 260],
-    [-300, 60, 320],
-    [240, 180, 160],
-    [60, -60, 60],
-  ];
-  return (
-    <>
-      {stars.map(([x, y, z], i) => (
-        <Flat key={i} x={x} y={y} z={z} w={28} h={28}>
-          <svg viewBox="0 0 28 28" width={28} height={28}>
-            <circle cx={14} cy={14} r={6 + (i % 3) * 2} fill="#ffe39a" />
-          </svg>
-        </Flat>
-      ))}
-      <Flat x={0} y={-120} z={330} w={260} h={150}>
-        <div className="s2-card s2-card-night">
-          <Script text={pad2(scene.num)} size={18} />
-          <Script text={scene.name} size={26} />
-          <Script text="準備中" size={14} className="s2-dim" />
-        </div>
-      </Flat>
-      <Flat x={0} y={150} z={350} w={120} h={110} onClick={down} label="舞台へ戻る" className="s2-sign">
-        <svg viewBox="0 0 120 110" width={120} height={110}>
-          <polygon points="60,108 8,54 34,54 34,4 86,4 86,54 112,54" fill="#c9a86a" transform="translate(0 4)" />
-          <polygon points="60,108 8,54 34,54 34,4 86,4 86,54 112,54" fill="#f2d39c" />
-        </svg>
-      </Flat>
-    </>
-  );
-}

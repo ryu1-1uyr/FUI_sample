@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Ref 
 import { createRoot } from 'react-dom/client';
 import type { Mount } from '../../types';
 import { clamp01, mixHex, reduced, settled, spring, stepSpring, wrapDeg } from './motion';
-import { AtticSky, Placeholder, atticSurfaces, placeholderSurfaces } from './props';
 import { Storefront, storefrontSurfaces } from './scene01';
 import { NightField, nightSurfaces } from './scene02';
+import { Workshop, workshopSurfaces } from './scene03';
+import { Archive, archiveSurfaces } from './scene04';
+import { AtticSky, atticSurfaces } from './scene05';
 import { H, SCENES, W, sceneAtTheta, sceneById, type Scene, type SceneId } from './scenes';
 import { Script, clearLoupe, updateLoupe } from './script';
 import { Attic, Compartment, LID, aimPortal } from './stage';
@@ -13,6 +15,8 @@ import './style.css';
 const DEG = Math.PI / 180;
 /** Stage camera. The portals need the same numbers to aim their own perspectives at it. */
 const VIEW = { w: 1180, h: 760, perspective: 1150, eyeY: 0.26, pivotY: 0.54 };
+/** How far behind the window plane the lid settles when lifted to the attic. */
+const LID_BACK = 220;
 const CAMERA = new DOMPoint(VIEW.w / 2, VIEW.h * VIEW.eyeY, VIEW.perspective);
 const LENS = 62;
 const STUBS = 5;
@@ -345,7 +349,8 @@ function App() {
       const tiltY = -p.sx * TILT[0];
       tiltRef.current!.style.transform = `rotateX(${tiltX.toFixed(3)}deg) rotateY(${tiltY.toFixed(3)}deg)`;
       // Keep the open face (or the lid, when lifted) on the z = 0 plane so it is shown at its true size.
-      const tz = -W / 2 + up * (W / 2 - LID);
+      // The lid is square (W x W), taller than the view, so it settles a little further back.
+      const tz = -W / 2 + up * (W / 2 - LID - LID_BACK);
       boxRef.current!.style.transform = `translateZ(${tz.toFixed(2)}px) rotateX(${pitch.x.toFixed(3)}deg)`;
       tableRef.current!.style.transform = `rotateY(${yaw.x.toFixed(3)}deg)`;
 
@@ -418,8 +423,6 @@ function App() {
     else compRefs.current.delete(id);
   };
 
-  const s03 = sceneById('s03');
-  const s04 = sceneById('s04');
 
   return (
     <div className={`s2${loupe ? ' s2-holding' : ''}`} ref={rootRef} style={{ '--lens': `${LENS}px` } as CSSProperties}>
@@ -445,15 +448,15 @@ function App() {
               <Compartment theta={90} surfaces={nightSurfaces} ref={setComp('s02')}>
                 <NightField go={turn} toAttic={toAttic} />
               </Compartment>
-              <Compartment theta={180} surfaces={placeholderSurfaces('#e8c49c', '#b9845a', '#a8754f')} ref={setComp('s03')}>
-                <Placeholder scene={s03} go={turn} />
+              <Compartment theta={180} surfaces={workshopSurfaces} ref={setComp('s03')}>
+                <Workshop go={turn} toAttic={toAttic} toBack={toBack} />
               </Compartment>
-              <Compartment theta={270} surfaces={placeholderSurfaces('#f9e0cf', '#e9c9a0', '#d8a97f')} ref={setComp('s04')}>
-                <Placeholder scene={s04} go={turn} />
+              <Compartment theta={270} surfaces={archiveSurfaces} ref={setComp('s04')}>
+                <Archive go={turn} toAttic={toAttic} />
               </Compartment>
             </div>
             <Attic surfaces={atticSurfaces} ref={setComp('s05')}>
-              <AtticSky scene={sceneById('s05')} down={toFront} />
+              <AtticSky down={toFront} />
             </Attic>
           </div>
         </div>

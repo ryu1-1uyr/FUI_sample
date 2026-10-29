@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Flat, Hanger, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
-import { Sign, Star, Tuft } from './props';
+import { Person, Sign, Star, Tuft } from './props';
 
 // 02 // Night gathering. Story seeds drift over a meadow at night; the storymonger nets them
 // and bottles them on a cart. The lantern and stars on the ceiling lead up to the attic.
@@ -87,18 +87,11 @@ const SEEDS = [
 
 function Storymonger() {
   return (
-    <svg viewBox="0 0 170 220" width={170} height={220}>
+    <Person>
       <rect x={70} y={62} width={8} height={150} rx={4} fill="#8a6a4a" transform="rotate(38 74 137)" />
       <circle cx={128} cy={52} r={26} fill="#8a6a4a" />
       <circle cx={128} cy={52} r={21} fill="#e9eef7" opacity={0.28} />
-      <path d="M34 220L44 112Q60 92 76 112L88 220Z" fill="#3b2f63" />
-      <path d="M44 120Q60 106 76 120L74 134Q60 124 46 134Z" fill="#e0a84a" />
-      <circle cx={60} cy={92} r={17} fill="#f1d2b4" />
-      <rect x={34} y={76} width={52} height={7} rx={3.5} fill="#2b2350" />
-      <path d="M44 78Q46 52 62 50Q76 52 76 78Z" fill="#2b2350" />
-      <path d="M70 118L92 110L94 118L74 128Z" fill="#3b2f63" />
-      <circle cx={92} cy={114} r={7} fill="#f1d2b4" />
-    </svg>
+    </Person>
   );
 }
 
