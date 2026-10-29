@@ -1,0 +1,557 @@
+/* Cut-paper tokens, scoped to this sample. The FUI roles carry over as paper roles:
+   ink = the script and dark cut-outs, paper = card stock, kraft = the box itself,
+   warn = the single red pin marking the front of the stage. Emphasis is lift, not glow. */
+.s2 {
+  --s2-ink: #3a3350;
+  --s2-paper: #fbf4e6;
+  --s2-kraft: #c9a073;
+  --s2-kraft-dark: #a98055;
+  --s2-warn: #e5484d;
+  --s2-lift: 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  --s2-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .3  0 0 0 0 .2  0 0 0 0 .1  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--s2-bg, #efe3cb);
+  color: var(--s2-ink);
+  font-family: 'Hiragino Maru Gothic ProN', 'Zen Maru Gothic', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+  user-select: none;
+}
+
+.s2 button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.s2-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.s2-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    var(--s2-grain),
+    radial-gradient(ellipse at 50% 40%, transparent 40%, rgb(40 25 10 / 0.18));
+  pointer-events: none;
+}
+
+/* ---- 3D stage ---------------------------------------------------------------------------- */
+
+.s2-view {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1180px;
+  height: 760px;
+  margin: -380px 0 0 -590px;
+  transform: scale(var(--fit, 1));
+  perspective: 1700px;
+  perspective-origin: 50% 24%;
+}
+
+.s2-tilt {
+  position: absolute;
+  top: 54%;
+  left: 50%;
+  transform-style: preserve-3d;
+}
+
+.s2-box,
+.s2-table,
+.s2-comp {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.s2-surface,
+.s2-flat {
+  position: absolute;
+  backface-visibility: hidden;
+  filter: brightness(var(--lit, 1));
+}
+
+.s2-tex {
+  filter: url(#s2-paper);
+}
+
+.s2-paper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  filter: url(#s2-paper) drop-shadow(0 4px 4px rgb(60 40 20 / 0.28));
+  transition: filter var(--s2-lift);
+}
+
+.s2-paper > svg {
+  display: block;
+}
+
+/* Cut edge of the cardboard: two liners with the flutes between them. */
+.s2-edge {
+  background:
+    radial-gradient(circle, var(--s2-kraft-dark) 0 4px, transparent 4.5px) 0 50% / 12px 10px repeat-x,
+    var(--s2-kraft);
+  box-shadow:
+    inset 0 3px 0 #b88f63,
+    inset 0 -3px 0 #b88f63;
+}
+
+.s2-post {
+  background:
+    radial-gradient(circle, var(--s2-kraft-dark) 0 4px, transparent 4.5px) 50% 0 / 10px 12px repeat-y,
+    var(--s2-kraft);
+  box-shadow:
+    inset 3px 0 0 #b88f63,
+    inset -3px 0 0 #b88f63;
+}
+
+.s2-lid {
+  background: radial-gradient(circle at 30% 30%, #1e2650, #131936 70%);
+}
+
+/* Clickable cut-outs lift toward the camera; hit-testing follows the 3D transform. */
+.s2-hit {
+  transition: translate var(--s2-lift);
+}
+
+.s2-comp:not([data-live]) .s2-hit {
+  pointer-events: none;
+}
+
+.s2-hit:hover {
+  translate: 0 -4px 18px;
+}
+
+.s2-hit:hover > .s2-paper {
+  filter: url(#s2-paper) drop-shadow(0 12px 9px rgb(60 40 20 / 0.32));
+}
+
+.s2-hit:active {
+  translate: 0 3px 6px;
+  transition-duration: 80ms;
+}
+
+.s2-hit:focus-visible {
+  outline: none;
+}
+
+.s2-hit:focus-visible > .s2-paper {
+  filter: url(#s2-paper) drop-shadow(0 0 0 #fff) drop-shadow(0 0 5px #fff) drop-shadow(0 10px 8px rgb(60 40 20 / 0.3));
+}
+
+.s2-hanger {
+  transform-origin: 50% 0;
+  animation: s2-swing var(--period) ease-in-out var(--phase) infinite alternate;
+}
+
+@keyframes s2-swing {
+  from {
+    rotate: z -2.6deg;
+  }
+  to {
+    rotate: z 2.6deg;
+  }
+}
+
+.s2-sign-text {
+  position: absolute;
+  top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 102px;
+  height: 56px;
+}
+
+.s2-plank {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  background: #7a5b44;
+  color: #fbe9c4;
+}
+
+.s2-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  border-radius: 12px;
+  background: var(--s2-paper);
+}
+
+.s2-card-night {
+  background: #232b5c;
+  color: #f4e7c4;
+}
+
+.s2-dim {
+  opacity: 0.55;
+}
+
+/* ---- Script and loupe -------------------------------------------------------------------- */
+
+.s2-script {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.s2-glyphs {
+  display: block;
+  fill: currentColor;
+  mask-image: radial-gradient(circle var(--lr, 0px) at var(--lx, -9999px) var(--ly, 0px), transparent 97%, #000 100%);
+}
+
+.s2-plain {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  mask-image: radial-gradient(circle var(--lr, 0px) at var(--lx, -9999px) var(--ly, 0px), #000 97%, transparent 100%);
+}
+
+.s2-lens {
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  width: calc(var(--lens) * 2);
+  height: calc(var(--lens) * 2);
+  margin: calc(var(--lens) * -1);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.35), rgb(200 230 235 / 0.12) 60%);
+  box-shadow:
+    0 0 0 9px var(--s2-kraft-dark),
+    0 10px 16px 6px rgb(40 25 10 / 0.25);
+  pointer-events: none;
+}
+
+.s2-lens[hidden] {
+  display: none;
+}
+
+.s2-lens i {
+  position: absolute;
+  top: 100%;
+  left: 100%;
+  width: 18px;
+  height: 64px;
+  border-radius: 8px;
+  background: #7a5b44;
+  transform: translate(-6px, -6px) rotate(-45deg);
+  transform-origin: 50% 0;
+}
+
+.s2-holding,
+.s2-holding * {
+  cursor: none !important;
+}
+
+/* ---- Operator panels --------------------------------------------------------------------- */
+
+.s2-panel,
+.s2-tag {
+  position: absolute;
+  z-index: 2;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--s2-grain), var(--s2-paper);
+  box-shadow:
+    0 5px 0 rgb(60 40 20 / 0.1),
+    0 12px 22px rgb(40 25 10 / 0.18);
+}
+
+.s2-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.s2-head b {
+  display: inline-flex;
+  padding: 4px 5px;
+  border-radius: 4px;
+  background: var(--s2-ink);
+  color: var(--s2-paper);
+}
+
+.s2-tag {
+  top: 34px;
+  left: 28px;
+  width: 210px;
+  transform-origin: 50% -34px;
+  animation: s2-swing 4.8s ease-in-out infinite alternate;
+  --period: 4.8s;
+}
+
+.s2-tag[data-moving] {
+  animation-duration: 1.1s;
+}
+
+.s2-string {
+  position: absolute;
+  bottom: 100%;
+  left: calc(50% - 1.5px);
+  width: 3px;
+  height: 34px;
+  background: #8a7a63;
+}
+
+.s2-tag-body {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.s2-tag-body > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.s2-tag-state {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 2px dotted rgb(58 51 80 / 0.2);
+}
+
+.s2-lamp {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7cc36a;
+  box-shadow: 0 0 0 3px rgb(124 195 106 / 0.25);
+}
+
+.s2-tag[data-moving] .s2-lamp {
+  background: #f2a541;
+  box-shadow: 0 0 0 3px rgb(242 165 65 / 0.3);
+  animation: s2-blink 0.5s steps(2, jump-none) infinite;
+}
+
+@keyframes s2-blink {
+  from {
+    opacity: 0.35;
+  }
+}
+
+.s2-dial {
+  right: 24px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 196px;
+}
+
+.s2-attic-tab {
+  color: var(--s2-kraft-dark);
+  transition: translate var(--s2-lift);
+}
+
+.s2-attic-tab:hover {
+  translate: 0 -3px;
+}
+
+.s2-attic-tab[aria-pressed='true'] {
+  color: #232b5c;
+}
+
+.s2-disc {
+  filter: drop-shadow(0 4px 3px rgb(60 40 20 / 0.25));
+}
+
+.s2-disc svg {
+  display: block;
+}
+
+.s2-wedge {
+  cursor: pointer;
+  transition: opacity var(--s2-lift);
+}
+
+.s2-wedge:not([data-on]) {
+  opacity: 0.55;
+}
+
+.s2-wedge:hover {
+  opacity: 0.85;
+}
+
+.s2-pin {
+  margin-top: -6px;
+}
+
+.s2-front {
+  margin-top: 4px;
+}
+
+.s2-stubs {
+  top: 24px;
+  right: 24px;
+  width: 196px;
+}
+
+.s2-stubs ol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s2-stubs li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 9px 12px 9px 16px;
+  border-radius: 4px;
+  background: #f2d39c;
+  /* Perforation where the stub was torn off. */
+  mask: radial-gradient(circle at 0 50%, transparent 4px, #000 4.5px) 0 0 / 100% 10px;
+  opacity: calc(1 - var(--i) * 0.12);
+  animation: s2-stub-in 0.32s cubic-bezier(0.05, 0.7, 0.1, 1) both;
+}
+
+.s2-stubs li:first-child {
+  background: #f6c97f;
+}
+
+.s2-stub-num {
+  grid-row: span 2;
+}
+
+@keyframes s2-stub-in {
+  from {
+    opacity: 0;
+    translate: 0 -14px;
+  }
+}
+
+.s2-tools {
+  bottom: 22px;
+  left: 24px;
+}
+
+.s2-tray {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.s2-loupe-btn {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  background: #ebdec5;
+  box-shadow: inset 0 3px 0 rgb(60 40 20 / 0.12);
+}
+
+.s2-loupe-btn svg {
+  transition:
+    translate var(--s2-lift),
+    opacity var(--s2-lift);
+}
+
+.s2-loupe-btn:hover svg {
+  translate: 0 -3px;
+}
+
+.s2-loupe-btn[aria-pressed='true'] svg {
+  opacity: 0.12;
+}
+
+.s2-keys {
+  display: grid;
+  grid-template:
+    '.    up   .     l' 30px
+    'left down right l' 30px
+    / 30px 30px 30px 30px;
+  gap: 4px;
+}
+
+.s2-key {
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--s2-paper);
+  color: var(--s2-ink);
+  box-shadow: 0 4px 0 #d8c39c;
+  transition:
+    translate 60ms,
+    box-shadow 60ms;
+}
+
+.s2-key[data-down] {
+  translate: 0 3px;
+  box-shadow: 0 1px 0 #d8c39c;
+}
+
+.s2-ArrowUp {
+  grid-area: up;
+}
+
+.s2-ArrowLeft {
+  grid-area: left;
+}
+
+.s2-ArrowDown {
+  grid-area: down;
+}
+
+.s2-ArrowRight {
+  grid-area: right;
+}
+
+.s2-keyL {
+  grid-area: l;
+  margin-left: 8px;
+}
+
+.s2-view.s2-cut {
+  animation: s2-cut 0.25s ease-out;
+}
+
+@keyframes s2-cut {
+  from {
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s2-hanger,
+  .s2-tag,
+  .s2-stubs li,
+  .s2-tag[data-moving] .s2-lamp {
+    animation: none;
+  }
+}
