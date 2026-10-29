@@ -161,6 +161,24 @@
   animation: s2-swing var(--period) ease-in-out var(--phase) infinite alternate;
 }
 
+.s2-seed {
+  animation: s2-bob var(--period) ease-in-out var(--phase) infinite alternate;
+}
+
+/* Seeds are the one thing in the scene that emits light. */
+.s2-seed > .s2-paper {
+  filter: url(#s2-paper) drop-shadow(0 0 6px rgb(255 228 150 / 0.9));
+}
+
+@keyframes s2-bob {
+  from {
+    translate: -3px -8px;
+  }
+  to {
+    translate: 3px 8px;
+  }
+}
+
 @keyframes s2-swing {
   from {
     rotate: z -2.6deg;
@@ -558,6 +576,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .s2-hanger,
+  .s2-seed,
   .s2-tag,
   .s2-stubs li,
   .s2-tag[data-moving] .s2-lamp {

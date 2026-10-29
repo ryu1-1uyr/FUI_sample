@@ -4,6 +4,7 @@ import type { Mount } from '../../types';
 import { clamp01, mixHex, reduced, settled, spring, stepSpring, wrapDeg } from './motion';
 import { AtticSky, Placeholder, atticSurfaces, placeholderSurfaces } from './props';
 import { Storefront, storefrontSurfaces } from './scene01';
+import { NightField, nightSurfaces } from './scene02';
 import { H, SCENES, W, sceneAtTheta, sceneById, type Scene, type SceneId } from './scenes';
 import { Script, clearLoupe, updateLoupe } from './script';
 import { Attic, Compartment, LID, aimPortal } from './stage';
@@ -417,7 +418,6 @@ function App() {
     else compRefs.current.delete(id);
   };
 
-  const s02 = sceneById('s02');
   const s03 = sceneById('s03');
   const s04 = sceneById('s04');
 
@@ -442,8 +442,8 @@ function App() {
               <Compartment theta={0} surfaces={storefrontSurfaces} ref={setComp('s01')}>
                 <Storefront go={turn} toAttic={toAttic} toBack={toBack} />
               </Compartment>
-              <Compartment theta={90} surfaces={placeholderSurfaces('#27306a', '#2f3a5e', '#1c2246')} ref={setComp('s02')}>
-                <Placeholder scene={s02} go={turn} />
+              <Compartment theta={90} surfaces={nightSurfaces} ref={setComp('s02')}>
+                <NightField go={turn} toAttic={toAttic} />
               </Compartment>
               <Compartment theta={180} surfaces={placeholderSurfaces('#e8c49c', '#b9845a', '#a8754f')} ref={setComp('s03')}>
                 <Placeholder scene={s03} go={turn} />

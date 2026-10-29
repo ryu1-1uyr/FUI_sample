@@ -1,7 +1,7 @@
 import { Flat, Hanger, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
 import { Script } from './script';
-import { Sign } from './props';
+import { Sign, Star, Tuft } from './props';
 
 // 01 // Storefront, daytime. The shop sits deep in its room; the hanging mobile leads up to
 // the attic, the standing signs lead to the neighbouring sides, the door leads inside.
@@ -64,18 +64,6 @@ export const storefrontSurfaces: Surfaces = {
   ),
 };
 
-const star = (cx: number, cy: number, R: number, r: number) =>
-  Array.from({ length: 10 }, (_, i) => {
-    const a = (Math.PI / 5) * i - Math.PI / 2;
-    const k = i % 2 ? r : R;
-    return `${(cx + Math.cos(a) * k).toFixed(2)},${(cy + Math.sin(a) * k).toFixed(2)}`;
-  }).join(' ');
-
-function Star({ size, fill = '#ffd34f' }: { size: number; fill?: string }) {
-  const R = size / 2 - 1;
-  return <polygon points={star(size / 2, R + 1, R, R * 0.48)} fill={fill} />;
-}
-
 function Tree({ w, h, tone }: { w: number; h: number; tone: [string, string, string] }) {
   const c = w / 2;
   return (
@@ -120,17 +108,6 @@ function Grass({ z, h, tone, seed }: { z: number; h: number; tone: [string, stri
         {blades}
       </svg>
     </Flat>
-  );
-}
-
-/** Tall foreground clump that overlaps the frame, so the stage reads as seen past something. */
-function Tuft({ w, h }: { w: number; h: number }) {
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
-      <path d={`M${w * 0.1} ${h}Q${w * 0.05} ${h * 0.4} ${w * 0.3} 0Q${w * 0.3} ${h * 0.5} ${w * 0.45} ${h}Z`} fill="#4f9a4c" />
-      <path d={`M${w * 0.3} ${h}Q${w * 0.5} ${h * 0.2} ${w * 0.9} ${h * 0.1}Q${w * 0.65} ${h * 0.5} ${w * 0.7} ${h}Z`} fill="#5ea85a" />
-      <path d={`M${w * 0.55} ${h}Q${w * 0.75} ${h * 0.55} ${w} ${h * 0.45}Q${w * 0.85} ${h * 0.75} ${w * 0.9} ${h}Z`} fill="#468d44" />
-    </svg>
   );
 }
 

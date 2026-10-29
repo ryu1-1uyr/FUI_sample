@@ -5,6 +5,30 @@ import { Script } from './script';
 const FLOOR = H / 2;
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
+const star = (cx: number, cy: number, R: number, r: number) =>
+  Array.from({ length: 10 }, (_, i) => {
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    const k = i % 2 ? r : R;
+    return `${(cx + Math.cos(a) * k).toFixed(2)},${(cy + Math.sin(a) * k).toFixed(2)}`;
+  }).join(' ');
+
+export function Star({ size, fill = '#ffd34f' }: { size: number; fill?: string }) {
+  const R = size / 2 - 1;
+  return <polygon points={star(size / 2, R + 1, R, R * 0.48)} fill={fill} />;
+}
+
+/** Tall foreground clump that overlaps the frame, so the stage reads as seen past something. */
+export function Tuft({ w, h, tone = ['#4f9a4c', '#5ea85a', '#468d44'] }: { w: number; h: number; tone?: [string, string, string] }) {
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h}>
+      <path d={`M${w * 0.1} ${h}Q${w * 0.05} ${h * 0.4} ${w * 0.3} 0Q${w * 0.3} ${h * 0.5} ${w * 0.45} ${h}Z`} fill={tone[0]} />
+      <path d={`M${w * 0.3} ${h}Q${w * 0.5} ${h * 0.2} ${w * 0.9} ${h * 0.1}Q${w * 0.65} ${h * 0.5} ${w * 0.7} ${h}Z`} fill={tone[1]} />
+      <path d={`M${w * 0.55} ${h}Q${w * 0.75} ${h * 0.55} ${w} ${h * 0.45}Q${w * 0.85} ${h * 0.75} ${w * 0.9} ${h}Z`} fill={tone[2]} />
+    </svg>
+  );
+}
+
+
 /** Standing arrow sign naming the neighbouring compartment it turns the stage to. */
 export function Sign({ x, z, dir, theta, onClick }: { x: number; z: number; dir: -1 | 1; theta: number; onClick: () => void }) {
   const to = sceneAtTheta(theta);
