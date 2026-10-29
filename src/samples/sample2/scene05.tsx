@@ -1,10 +1,10 @@
 import type { CSSProperties } from 'react';
 import { ATTIC_D, Flat, type Surfaces } from './stage';
 import { W } from './scenes';
-import { Person, Star } from './props';
+import { Star } from './props';
 
 // 05 // The sky in the attic, seen down through the lid. Requests from readers arrive here as
-// paper kites; the storymonger rows a paper boat between the clouds, fishing for stars.
+// paper kites; a paper boat drifts between the clouds, its rod left fishing for stars.
 // Frame: y runs from the back of the box (-W/2, top of the screen) to the front; z rises
 // from the far sky (W/2 - ATTIC_D) up to the lid (W/2).
 
@@ -79,14 +79,14 @@ export function AtticSky({ down }: { down: () => void }) {
       <Flat x={-150} y={-20} z={FAR + 130} w={320} h={130}>
         <Cloud w={320} h={130} tone="#2c3770" />
       </Flat>
-      <Flat x={-30} y={-120} z={FAR + 200} w={190} h={230}>
-        <Person>
-          <rect x={88} y={20} width={5} height={110} rx={2.5} fill="#8a6a4a" transform="rotate(20 90 114)" />
-          <rect x={120} y={18} width={2} height={60} fill="#e9e2c0" />
-          <g transform="translate(106 74)">
+      <Flat x={-30} y={-100} z={FAR + 200} w={120} h={190}>
+        <svg viewBox="0 0 120 190" width={120} height={190}>
+          <path d="M20 190H28L96 8L90 4Z" fill="#8a6a4a" />
+          <rect x={92} y={6} width={2} height={96} fill="#e9e2c0" />
+          <g transform="translate(78 98)">
             <Star size={30} fill="#ffd34f" />
           </g>
-        </Person>
+        </svg>
       </Flat>
       <Flat x={-30} y={70} z={FAR + 202} w={220} h={70}>
         <svg viewBox="0 0 220 70" width={220} height={70}>

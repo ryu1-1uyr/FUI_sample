@@ -139,6 +139,15 @@
   translate: 0 -4px 18px;
 }
 
+/* Wall cut-outs lift along the wall's normal instead of toward the camera. */
+.s2-wall.s2-hit:hover {
+  translate: var(--lift) 0 0;
+}
+
+.s2-wall.s2-hit:active {
+  translate: 0 0 0;
+}
+
 .s2-hit:hover > .s2-paper {
   filter: url(#s2-paper) drop-shadow(0 12px 9px rgb(60 40 20 / 0.32));
 }
@@ -198,6 +207,20 @@
   gap: 6px;
   width: 102px;
   height: 56px;
+}
+
+.s2-door-plate {
+  position: absolute;
+  top: 0;
+  left: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  width: 100px;
+  padding: 5px 0;
+  border-radius: 4px;
+  background: #f2d39c;
 }
 
 .s2-plank {

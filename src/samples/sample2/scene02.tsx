@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react';
 import { Flat, Hanger, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
-import { Person, Sign, Star, Tuft } from './props';
+import { Sign, Star, Tuft } from './props';
 
-// 02 // Night gathering. Story seeds drift over a meadow at night; the storymonger nets them
-// and bottles them on a cart. The lantern and stars on the ceiling lead up to the attic.
+// 02 // Night gathering. Story seeds drift over a meadow at night; a net is planted where they
+// were being caught, and the filled jars wait on a cart. The lantern and stars on the ceiling
+// lead up to the attic.
 
 const FLOOR = H / 2;
 const BACK = W / 2 - D;
@@ -85,13 +86,15 @@ const SEEDS = [
   [-330, -120, 360, 14, 4.7],
 ];
 
-function Storymonger() {
+/** The net, planted in the ground where the storymonger left it. */
+function Net() {
   return (
-    <Person>
-      <rect x={70} y={62} width={8} height={150} rx={4} fill="#8a6a4a" transform="rotate(38 74 137)" />
+    <svg viewBox="0 0 170 220" width={170} height={220}>
+      <path d="M36 220H46L126 76L118 72Z" fill="#8a6a4a" />
       <circle cx={128} cy={52} r={26} fill="#8a6a4a" />
       <circle cx={128} cy={52} r={21} fill="#e9eef7" opacity={0.28} />
-    </Person>
+      <circle cx={132} cy={58} r={6} fill="#ffe9a0" />
+    </svg>
   );
 }
 
@@ -143,7 +146,7 @@ export function NightField({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic
       </Flat>
 
       <Flat x={110} y={FLOOR - 220} z={170} w={170} h={220} grounded>
-        <Storymonger />
+        <Net />
       </Flat>
       <Flat x={-140} y={FLOOR - 130} z={120} w={190} h={130} grounded>
         <Cart />

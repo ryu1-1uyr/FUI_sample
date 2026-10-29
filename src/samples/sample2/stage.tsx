@@ -168,6 +168,45 @@ export function Compartment({ theta, surfaces, children, ref }: CompartmentProps
   );
 }
 
+/**
+ * A cut-out pasted on a side wall (`side` -1 = left, 1 = right), centred at depth z. Its
+ * local x runs along the wall; hover lifts it off the wall toward the room.
+ */
+export function WallFlat({
+  side,
+  z,
+  y,
+  w,
+  h,
+  children,
+  onClick,
+  label,
+}: {
+  side: -1 | 1;
+  z: number;
+  y: number;
+  w: number;
+  h: number;
+  children: ReactNode;
+  onClick: () => void;
+  label: string;
+}) {
+  const style = {
+    left: -w / 2,
+    top: y,
+    width: w,
+    height: h,
+    transform: `translate3d(${side * (W / 2 - 1)}px, 0, ${z}px) rotateY(${-side * 90}deg)`,
+    '--fog': fogAt(z).toFixed(3),
+    '--lift': `${-side * 14}px`,
+  } as CSSProperties;
+  return (
+    <button type="button" className="s2-flat s2-hit s2-wall" style={style} onClick={onClick} aria-label={label}>
+      <div className="s2-paper">{children}</div>
+    </button>
+  );
+}
+
 /** Depth of the attic room below the lid. */
 export const ATTIC_D = 360;
 /** The lid sits on top of the cut edges. */

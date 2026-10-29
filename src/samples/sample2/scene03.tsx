@@ -1,9 +1,10 @@
 import { Flat, Hanger, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
-import { Person, Sign, Star } from './props';
+import { SideDoor, Star } from './props';
 
-// 03 // The tailoring room, inside the shop at dusk. The storymonger cuts gathered seeds into
-// shapes at the bench; finished pieces dry on a line. The back door leads out to the storefront.
+// 03 // The tailoring room, inside the shop at dusk. Gathered seeds are cut into shapes at the
+// bench (the storymonger has just stepped out; their hat is on the peg) and finished pieces
+// dry on a line. The back door leads out to the storefront, the side doors to the neighbours.
 
 const FLOOR = H / 2;
 const BACK = W / 2 - D;
@@ -36,6 +37,10 @@ export const workshopSurfaces: Surfaces = {
         <circle cx="560" cy="150" r="26" />
         <rect x="610" y="122" width="54" height="54" rx="6" />
       </g>
+      <circle cx="720" cy="236" r="5" fill="#7a4f34" />
+      <rect x="690" y="240" width="60" height="7" rx="3.5" fill="#2b2350" />
+      <path d="M700 242Q702 214 720 212Q738 214 740 242Z" fill="#2b2350" />
+      <rect x="701" y="232" width="38" height="5" fill="#e0a84a" />
       <g fill="#c94f6a">
         <circle cx="470" cy="122" r="4" />
         <circle cx="560" cy="126" r="4" />
@@ -46,9 +51,9 @@ export const workshopSurfaces: Surfaces = {
   side: (
     <svg viewBox={`0 0 ${D} 520`} width="100%" height="100%" className="s2-tex">
       {wallpaper(D)}
-      <rect x="180" y="210" width="300" height="12" fill="#8a5a3c" />
+      <rect x="320" y="210" width="290" height="12" fill="#8a5a3c" />
       {['#6f9fd8', '#e9b44c', '#7cb08a', '#d27c6c', '#c7a2d6', '#f2d39c'].map((c, i) => (
-        <circle key={c} cx={210 + i * 46} cy={190} r={18} fill={c} />
+        <circle key={c} cx={350 + i * 46} cy={190} r={18} fill={c} />
       ))}
     </svg>
   ),
@@ -147,11 +152,6 @@ export function Workshop({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void; t
         </svg>
       </Flat>
 
-      <Flat x={-40} y={FLOOR - 250} z={70} w={170} h={220}>
-        <Person>
-          <rect x={86} y={104} width={30} height={10} rx={3} fill="#fbf4e6" transform="rotate(-12 100 110)" />
-        </Person>
-      </Flat>
       <Flat x={0} y={FLOOR - 150} z={120} w={400} h={150} grounded>
         <Bench />
       </Flat>
@@ -165,8 +165,8 @@ export function Workshop({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void; t
         <Line />
       </Flat>
 
-      <Sign x={-240} z={330} dir={-1} theta={90} onClick={() => go(-1)} />
-      <Sign x={240} z={330} dir={1} theta={270} onClick={() => go(1)} />
+      <SideDoor side={-1} theta={90} onClick={() => go(-1)} />
+      <SideDoor side={1} theta={270} onClick={() => go(1)} />
 
       <Flat x={-340} y={FLOOR - 150} z={392} w={90} h={150}>
         <svg viewBox="0 0 90 150" width={90} height={150}>

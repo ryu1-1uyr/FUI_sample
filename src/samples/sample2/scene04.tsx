@@ -1,9 +1,9 @@
 import { Flat, Hanger, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
-import { Person, Sign } from './props';
+import { SideDoor } from './props';
 
 // 04 // The archive and the dispatch desk, early morning. Finished stories are shelved as books;
-// the storymonger wraps the ordered ones, and paper birds carry letters up to the attic.
+// ordered ones wait wrapped on the counter, and paper birds carry letters up to the attic.
 
 const FLOOR = H / 2;
 const BACK = W / 2 - D;
@@ -117,13 +117,6 @@ export function Archive({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic: (
         </svg>
       </Flat>
 
-      <Flat x={-90} y={FLOOR - 220} z={0} w={170} h={220}>
-        <Person>
-          <g transform="translate(84 98) rotate(-8)">
-            <Parcel w={34} h={26} tone="#f2d39c" />
-          </g>
-        </Person>
-      </Flat>
       <Flat x={30} y={FLOOR - 120} z={60} w={320} h={120} grounded>
         <svg viewBox="0 0 320 120" width={320} height={120}>
           <rect y={30} width={320} height={90} rx={4} fill="#8a5a3c" />
@@ -154,8 +147,8 @@ export function Archive({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic: (
         </svg>
       </Flat>
 
-      <Sign x={-240} z={330} dir={-1} theta={180} onClick={() => go(-1)} />
-      <Sign x={240} z={330} dir={1} theta={0} onClick={() => go(1)} />
+      <SideDoor side={-1} theta={180} onClick={() => go(-1)} />
+      <SideDoor side={1} theta={0} onClick={() => go(1)} />
 
       {[
         [-350, 120, 90],

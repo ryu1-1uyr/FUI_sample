@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { Flat, type Surfaces } from './stage';
+import { Flat, WallFlat, type Surfaces } from './stage';
 import { H, sceneAtTheta } from './scenes';
 import { Script } from './script';
 
@@ -16,25 +15,6 @@ const star = (cx: number, cy: number, R: number, r: number) =>
 export function Star({ size, fill = '#ffd34f' }: { size: number; fill?: string }) {
   const R = size / 2 - 1;
   return <polygon points={star(size / 2, R + 1, R, R * 0.48)} fill={fill} />;
-}
-
-/**
- * The storymonger, 170 x 220, facing right. `children` draws what they hold, in the same
- * coordinates (the right hand rests near 92, 114).
- */
-export function Person({ children }: { children?: ReactNode }) {
-  return (
-    <svg viewBox="0 0 170 220" width={170} height={220}>
-      <path d="M34 220L44 112Q60 92 76 112L88 220Z" fill="#3b2f63" />
-      <path d="M44 120Q60 106 76 120L74 134Q60 124 46 134Z" fill="#e0a84a" />
-      <circle cx={60} cy={92} r={17} fill="#f1d2b4" />
-      <rect x={34} y={76} width={52} height={7} rx={3.5} fill="#2b2350" />
-      <path d="M44 78Q46 52 62 50Q76 52 76 78Z" fill="#2b2350" />
-      <path d="M70 118L92 110L94 118L74 128Z" fill="#3b2f63" />
-      {children}
-      <circle cx={92} cy={114} r={7} fill="#f1d2b4" />
-    </svg>
-  );
 }
 
 /** Tall foreground clump that overlaps the frame, so the stage reads as seen past something. */
@@ -65,6 +45,28 @@ export function Sign({ x, z, dir, theta, onClick }: { x: number; z: number; dir:
         <Script text={to.name} size={16} />
       </div>
     </Flat>
+  );
+}
+
+/**
+ * Indoor counterpart of the sign: a door in a side wall, left ajar so the neighbouring
+ * scene's colour shows through. The plate above names where it leads.
+ */
+export function SideDoor({ side, theta, onClick }: { side: -1 | 1; theta: number; onClick: () => void }) {
+  const to = sceneAtTheta(theta);
+  return (
+    <WallFlat side={side} z={160} y={FLOOR - 236} w={130} h={236} onClick={onClick} label={`${to.name}へ`}>
+      <svg viewBox="0 0 130 236" width={130} height={236}>
+        <path d="M8 236V110A57 57 0 0 1 122 110V236Z" fill="#7a5b44" />
+        <path d="M18 236V114A47 47 0 0 1 112 114V236Z" fill={to.bg} />
+        <path d="M18 236V114Q30 76 62 68L74 236Z" fill="#5f84c4" />
+        <circle cx={62} cy={166} r={4} fill="#ffd66b" />
+      </svg>
+      <div className="s2-door-plate">
+        <Script text={pad2(to.num)} size={11} />
+        <Script text={to.name} size={13} />
+      </div>
+    </WallFlat>
   );
 }
 
