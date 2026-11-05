@@ -240,7 +240,7 @@ export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void;
       <Hanger x={-70} z={-40} chain={180} size={52} period={4.2} phase={2.2} onClick={toAttic} label="天井裏の空へ">
         <Cloud size={52} />
       </Hanger>
-      <Hanger x={130} z={90} chain={112} size={84} period={5.2} phase={0} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={130} z={90} chain={112} size={84} period={5.2} phase={0} onClick={toAttic} label="天井裏の空へ" glow="255 210 120">
         <Sun size={84} />
       </Hanger>
       <Hanger x={30} z={230} chain={92} size={44} period={3.6} phase={0.7} onClick={toAttic} label="天井裏の空へ">

@@ -1,4 +1,5 @@
-import { W, type SceneId } from './scenes';
+import { D, W, type SceneId } from './scenes';
+import { ATTIC_D } from './stage';
 
 // Point lights for the rooms. Light sources are hanging cut-outs (Hanger with `glow`); each frame
 // their position is read back from the swing, then:
@@ -7,14 +8,26 @@ import { W, type SceneId } from './scenes';
 // - every flat gets --glow / --warm from its distance to each light and which side it faces.
 // Room frame as in stage.tsx: the window is at z = W/2, the back wall at W/2 - depth.
 
+type LightSpec = {
+  power: number;
+  /** How much it warms what it reaches (sepia). */
+  warmth: number;
+  flicker?: boolean;
+  /** A fixed light (a window, a cut-out moon) at this room position, in this `r g b`. Without
+   * it the light is the next hanging cut-out marked `glow`, in hanger order. */
+  at?: [number, number, number];
+  rgb?: string;
+};
+
 type Rig = {
   /** Scales the room's own brightness, so the lights have darkness to work against. */
   ambient: number;
-  /** Per light, in hanger order: strength, and how much it warms what it reaches (sepia). */
-  lights: { power: number; warmth: number; flicker?: boolean }[];
+  lights: LightSpec[];
 };
 
 export const RIGS: Partial<Record<SceneId, Rig>> = {
+  // Daylight is everywhere already, so the sun only warms what is near it.
+  s01: { ambient: 1, lights: [{ power: 0.45, warmth: 0.12 }] },
   s02: {
     ambient: 0.72,
     lights: [
@@ -22,6 +35,18 @@ export const RIGS: Partial<Record<SceneId, Rig>> = {
       { power: 0.4, warmth: 0 },
     ],
   },
+  // Light walls swallow a warm pool, so the room is dimmer and the lamps stronger than at night.
+  s03: {
+    ambient: 0.66,
+    lights: [
+      { power: 1.2, warmth: 0.3, flicker: true },
+      { power: 1.05, warmth: 0.3, flicker: true },
+    ],
+  },
+  // Morning sun through the round window on the back wall.
+  s04: { ambient: 0.9, lights: [{ power: 0.9, warmth: 0.15, at: [0, -110, W / 2 - D + 40], rgb: '255 226 170' }] },
+  // The crescent moon at the far end of the attic sky.
+  s05: { ambient: 0.8, lights: [{ power: 0.8, warmth: 0, at: [170, -180, W / 2 - ATTIC_D + 60], rgb: '150 180 255' }] },
 };
 
 /** Distance at which a light of power 1 gives a pool of REF_ALPHA straight below it. */
@@ -100,13 +125,20 @@ export function lightRoom(comp: HTMLElement, rig: Rig, t: number) {
   if (!c) return;
   const [w, h, d] = c.dims;
 
-  const lamps: Lamp[] = c.hangers.map((el, i) => {
+  let hanger = 0;
+  const lamps: Lamp[] = rig.lights.flatMap((spec): Lamp[] => {
+    const flicker = spec.flicker ? 1 + Math.sin(t * 7.3) * 0.04 + Math.sin(t * 13.1 + 1.7) * 0.03 : 1;
+    const power = spec.power * flicker;
+    if (spec.at) {
+      const [x, y, z] = spec.at;
+      return [{ x, y, z, rgb: spec.rgb ?? '255 240 210', power, warmth: spec.warmth }];
+    }
+    const el = c.hangers[hanger++];
+    if (!el) return [];
     const [hx, hz, drop] = el.dataset.hook!.split(' ').map(Number);
     const a = (angle(el) + angle(el.firstElementChild!)) * (Math.PI / 180);
-    const spec = rig.lights[i] ?? { power: 0.5, warmth: 0 };
-    const flicker = spec.flicker ? 1 + Math.sin(t * 7.3) * 0.04 + Math.sin(t * 13.1 + 1.7) * 0.03 : 1;
     // The swing turns about the hook; positive CSS rotation moves the bottom to the left.
-    return { x: hx - Math.sin(a) * drop, y: -h / 2 + Math.cos(a) * drop, z: hz, rgb: el.dataset.light!, power: spec.power * flicker, warmth: spec.warmth };
+    return [{ x: hx - Math.sin(a) * drop, y: -h / 2 + Math.cos(a) * drop, z: hz, rgb: el.dataset.light!, power, warmth: spec.warmth }];
   });
 
   for (const el of c.planes) {

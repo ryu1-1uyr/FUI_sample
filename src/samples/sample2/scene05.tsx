@@ -54,6 +54,10 @@ const STARS = [
 export function AtticSky({ down }: { down: () => void }) {
   return (
     <>
+      {/* Moonlight halo; the moon itself is the attic's light (lighting.ts, s05). */}
+      <Flat x={160} y={-390} z={FAR + 38} w={420} h={420}>
+        <div className="s2-moonglow" />
+      </Flat>
       <Flat x={170} y={-280} z={FAR + 40} w={200} h={200}>
         <svg viewBox="0 0 200 200" width={200} height={200}>
           <path d="M130 10A90 90 0 1 0 130 190A100 100 0 0 1 130 10Z" fill="#ffe08a" />

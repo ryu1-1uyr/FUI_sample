@@ -210,11 +210,11 @@ export function Workshop({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void; t
         <Cuboid y={-96} w={130} h={96} d={100} front="#c9a073" top="#8a6a4a" side="#b88f63" frontArt={<DestTag theta={270} />} />
       </Solid>
 
-      <Hanger x={-140} z={180} chain={70} size={60} period={5} phase={0.3} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={-140} z={180} chain={70} size={60} period={5} phase={0.3} onClick={toAttic} label="天井裏の空へ" glow="255 190 110">
         <path d="M4 30A26 26 0 0 1 56 30Z" fill="#5f8f8a" />
         <circle cx={30} cy={34} r={8} fill="#fff0b8" />
       </Hanger>
-      <Hanger x={160} z={60} chain={110} size={50} period={4.6} phase={1.8} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={160} z={60} chain={110} size={50} period={4.6} phase={1.8} onClick={toAttic} label="天井裏の空へ" glow="255 190 110">
         <path d="M4 26A21 21 0 0 1 46 26Z" fill="#c9784f" />
         <circle cx={25} cy={30} r={7} fill="#fff0b8" />
       </Hanger>
