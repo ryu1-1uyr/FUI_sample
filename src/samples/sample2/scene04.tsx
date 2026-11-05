@@ -41,7 +41,7 @@ export const archiveSurfaces: Surfaces = {
       <rect x="300" width="200" height="520" fill="#f6e4d2" />
       <circle cx="400" cy="150" r="78" fill="#7a5b44" />
       <circle cx="400" cy="150" r="68" fill="#fde7c8" />
-      <rect x="332" y="150" width="136" height="68" fill="#fbd9b0" />
+      <path d="M332 150A68 68 0 0 0 468 150Z" fill="#fbd9b0" />
       <circle cx="430" cy="170" r="26" fill="#ffd48a" />
       <rect x="396" y="82" width="8" height="136" fill="#7a5b44" />
       <rect x="332" y="146" width="136" height="8" fill="#7a5b44" />

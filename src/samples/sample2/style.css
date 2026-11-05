@@ -78,6 +78,12 @@
     saturate(calc(1 - var(--fog, 0) * 0.4)) sepia(var(--warm, 0));
 }
 
+/* Light sources emit, so the room's dimmed ambient does not apply to them; they still darken
+   when their side turns away from the camera. */
+.s2-flat[data-light] {
+  filter: brightness(calc(0.55 + 0.5 * var(--facing, 1)));
+}
+
 .s2-light {
   position: absolute;
   backface-visibility: hidden;

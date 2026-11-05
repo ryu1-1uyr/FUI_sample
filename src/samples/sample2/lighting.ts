@@ -26,8 +26,8 @@ type Rig = {
 };
 
 export const RIGS: Partial<Record<SceneId, Rig>> = {
-  // Daylight is everywhere already, so the sun only warms what is near it.
-  s01: { ambient: 1, lights: [{ power: 0.45, warmth: 0.12 }] },
+  // Daylight, but still inside a box: dim enough that the hanging sun reads as the light.
+  s01: { ambient: 0.78, lights: [{ power: 0.95, warmth: 0.18 }] },
   s02: {
     ambient: 0.72,
     lights: [
