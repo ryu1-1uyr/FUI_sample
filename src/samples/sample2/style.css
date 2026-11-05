@@ -73,6 +73,26 @@
   filter: brightness(var(--lit, 1));
 }
 
+/* Pop-up book: cut-outs lie back on the page (--pop 90deg) while their scene is away and stand
+   up, back rows first, when it arrives. A registered angle so it can transition. */
+@property --pop {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.s2-flat,
+.s2-solid {
+  --s2-unfold: --pop 0.7s cubic-bezier(0.34, 1.5, 0.64, 1) calc((1 - var(--fog, 0)) * 480ms);
+  transform-origin: 50% 100%;
+  transition: var(--s2-unfold);
+}
+
+.s2-comp[data-folded] :is(.s2-flat, .s2-solid) {
+  --pop: 90deg;
+  transition: --pop 0.35s cubic-bezier(0.5, 0, 0.75, 0);
+}
+
 .s2-flat {
   /* --glow and --warm come from lighting.ts: how strongly, and how warmly, a light reaches it. */
   filter: brightness(calc(var(--lit, 1) * (1 + var(--fog, 0) * 0.12) * (1 + var(--glow, 0))))
@@ -170,7 +190,9 @@
 
 /* Clickable cut-outs lift toward the camera; hit-testing follows the 3D transform. */
 .s2-hit {
-  transition: translate var(--s2-lift);
+  transition:
+    translate var(--s2-lift),
+    var(--s2-unfold);
 }
 
 .s2-comp:not([data-live]) .s2-hit {

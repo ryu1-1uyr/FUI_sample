@@ -43,7 +43,7 @@ export function Flat({ x, y, z, w, h, className = '', style, children, onClick, 
     top: y,
     width: w,
     height: h,
-    transform: `translateZ(${z}px)`,
+    transform: `translateZ(${z}px) rotateX(var(--pop))`,
     '--fog': fogAt(z).toFixed(3),
     ...style,
   } as CSSProperties;
@@ -302,7 +302,7 @@ export function Solid({
     <button
       type="button"
       className="s2-solid s2-hit"
-      style={{ left: x, top: H / 2, transform: `translateZ(${z}px)` }}
+      style={{ left: x, top: H / 2, transform: `translateZ(${z}px) rotateX(var(--pop))` }}
       onClick={onClick}
       aria-label={label}
     >
@@ -440,7 +440,7 @@ export function Hanger({
     top: -H / 2,
     width: size,
     height: chain + size,
-    transform: `translateZ(${z}px)`,
+    transform: `translateZ(${z}px) rotateX(var(--pop))`,
     '--fog': fogAt(z).toFixed(3),
     '--period': `${period}s`,
     '--phase': `${-phase}s`,

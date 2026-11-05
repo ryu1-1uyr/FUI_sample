@@ -251,6 +251,8 @@ function App() {
   /** The scene shown before the current one, for the attic's way back down. */
   const prevRef = useRef<SceneId | null>(null);
   const movingRef = useRef(false);
+  /** The scene standing up; every other room stays folded flat like a closed pop-up page. */
+  const shownRef = useRef<SceneId | null>('s01');
   const loupeRef = useRef(false);
   const t0 = useRef(performance.now());
   const stubKey = useRef(0);
@@ -288,6 +290,7 @@ function App() {
     prevRef.current = targetRef.current;
     targetRef.current = id;
     movingRef.current = true;
+    shownRef.current = null;
     setTarget(id);
     setMoving(true);
   }, []);
@@ -435,10 +438,12 @@ function App() {
         if (rig && weights[i] > 0.02) lightRoom(el, rig, now / 1000);
         el.toggleAttribute('data-live', weights[i] > 0.9);
         el.toggleAttribute('data-awake', weights[i] > 0.02);
+        el.toggleAttribute('data-folded', !reduced && s.id !== shownRef.current);
       });
 
       if (movingRef.current && settled(yaw) && settled(pitch)) {
         movingRef.current = false;
+        shownRef.current = targetRef.current;
         setMoving(false);
         logStub(targetRef.current);
       }
