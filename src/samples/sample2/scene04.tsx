@@ -7,6 +7,43 @@ import { BookStack } from './props';
 
 const FLOOR = H / 2;
 const BACK = W / 2 - D;
+
+// Morning sun through the round window. Everything about the light derives from one direction,
+// so the shaft, the patch on the floor and the muntin shadows all line up.
+const WIN = { y: -110, r: 68, bar: 8 };
+/** Direction the sunlight travels in the room, per unit of drop: a little right, as far forward. */
+const SUN = { dx: 0.15, dz: 1 };
+const SLOPE = Math.atan2(SUN.dz, 1);
+const ALONG = Math.hypot(1, SUN.dz);
+
+/**
+ * The floor patch is the window cast along SUN, which is affine in the window's (x, y): this
+ * maps window coordinates straight into the floor art's (u, v) (u = x + W/2, v = z - BACK).
+ */
+const CAST = `matrix(1 0 ${-SUN.dx} ${-SUN.dz} ${W / 2 + SUN.dx * FLOOR} ${SUN.dz * FLOOR})`;
+
+/** The two panes of light, above and below the horizontal muntin: their mid height and width. */
+const PANES = [-1, 1].map((side) => {
+  const y = WIN.y + side * (WIN.r + WIN.bar / 2) / 2;
+  const half = Math.sqrt(WIN.r ** 2 - (y - WIN.y) ** 2);
+  return { y, width: half * 2, length: ((FLOOR - y) * ALONG) };
+});
+
+/** Dust motes riding the shafts: pane, fraction along it, sideways offset, drift period. */
+const MOTES = [
+  [0, 0.2, -20, 7],
+  [0, 0.45, 18, 8.5],
+  [0, 0.7, -8, 6.5],
+  [1, 0.25, 26, 9],
+  [1, 0.5, -24, 7.5],
+  [1, 0.75, 10, 8],
+  [0, 0.85, 30, 6.8],
+  [1, 0.9, -14, 9.4],
+].map(([pane, f, off, period]) => {
+  const p = PANES[pane];
+  const drop = (FLOOR - p.y) * f;
+  return [off + SUN.dx * drop, p.y + drop, BACK + SUN.dz * drop, period];
+});
 const SPINES = ['#e9b44c', '#6f9fd8', '#d27c6c', '#7cb08a', '#c7a2d6', '#f2d39c', '#5f8f8a'];
 
 /** Bookshelves filling a w x 520 wall from `top` down to the floor. */
@@ -42,7 +79,7 @@ export const archiveSurfaces: Surfaces = {
       <circle cx="400" cy="150" r="78" fill="#7a5b44" />
       <circle cx="400" cy="150" r="68" fill="#fde7c8" />
       <path d="M332 150A68 68 0 0 0 468 150Z" fill="#fbd9b0" />
-      <circle cx="430" cy="170" r="26" fill="#ffd48a" />
+      <circle cx="376" cy="122" r="22" fill="#ffd48a" />
       <rect x="396" y="82" width="8" height="136" fill="#7a5b44" />
       <rect x="332" y="146" width="136" height="8" fill="#7a5b44" />
     </svg>
@@ -61,21 +98,17 @@ export const archiveSurfaces: Surfaces = {
           (r + c) % 2 ? <rect key={`${r}-${c}`} x={c * 80} y={r * 62} width={80} height={62} fill="#e0ba8c" /> : null,
         ),
       )}
+      <mask id="s2-window-cast">
+        <circle cx={0} cy={WIN.y} r={WIN.r} fill="#fff" />
+        <rect x={-WIN.bar / 2} y={WIN.y - WIN.r} width={WIN.bar} height={WIN.r * 2} fill="#000" />
+        <rect x={-WIN.r} y={WIN.y - WIN.bar / 2} width={WIN.r * 2} height={WIN.bar} fill="#000" />
+      </mask>
+      <g transform={CAST}>
+        <rect x={-WIN.r} y={WIN.y - WIN.r} width={WIN.r * 2} height={WIN.r * 2} fill="#fff3d6" opacity={0.6} mask="url(#s2-window-cast)" />
+      </g>
     </svg>
   ),
 };
-
-/** Dust motes in the window light: x, y, z, drift period. */
-const MOTES = [
-  [-20, -60, BACK + 160, 7],
-  [30, 0, BACK + 190, 8.5],
-  [70, 60, BACK + 220, 6.5],
-  [10, 110, BACK + 250, 9],
-  [100, -20, BACK + 210, 7.5],
-  [60, 130, BACK + 280, 8],
-  [130, 80, BACK + 300, 6.8],
-  [-10, 30, BACK + 230, 9.4],
-];
 
 function Parcel({ w, h, tone }: { w: number; h: number; tone: string }) {
   return (
@@ -161,11 +194,19 @@ export function Archive({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic: (
 
 
       {/* Morning light from the round window, with dust turning in it. */}
-      <Flat x={40} y={-150} z={BACK + 140} w={360} h={330}>
-        <svg viewBox="0 0 360 330" width={360} height={330}>
-          <polygon points="140,0 230,0 360,330 50,330" fill="#fff4dc" opacity={0.22} />
-        </svg>
-      </Flat>
+      {PANES.map((p) => (
+        <div
+          key={p.y}
+          className="s2-shaft"
+          style={{
+            left: -p.width / 2,
+            top: p.y,
+            width: p.width,
+            height: p.length,
+            transform: `translateZ(${BACK + 1}px) rotateX(${(SLOPE * 180) / Math.PI}deg) skewX(${(Math.atan(SUN.dx / ALONG) * 180) / Math.PI}deg)`,
+          }}
+        />
+      ))}
       {MOTES.map(([x, y, z, period], i) => (
         <Flat key={i} x={x} y={y} z={z} w={6} h={6} className="s2-mote" style={tempo(period, i * 1.1, '0px')}>
           <svg viewBox="0 0 6 6" width={6} height={6}>

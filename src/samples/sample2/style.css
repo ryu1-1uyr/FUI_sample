@@ -99,6 +99,16 @@
   background: radial-gradient(closest-side, rgb(150 180 255 / 0.32), rgb(150 180 255 / 0.1) 50%, transparent);
 }
 
+.s2-shaft {
+  position: absolute;
+  transform-origin: 50% 0;
+  background: linear-gradient(rgb(255 243 214 / 0.34), rgb(255 243 214 / 0.16) 70%, rgb(255 243 214 / 0.05));
+  /* Soft edges, and the vertical muntin's shadow down the middle. */
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 45%, transparent 47%, transparent 53%, #000 55%, #000 86%, transparent);
+  opacity: var(--facing, 1);
+  pointer-events: none;
+}
+
 .s2-halo {
   position: absolute;
   border-radius: 50%;
