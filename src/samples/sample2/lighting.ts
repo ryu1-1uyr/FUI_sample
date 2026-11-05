@@ -88,6 +88,34 @@ function onPlane(plane: string, l: Lamp, w: number, h: number, d: number): [numb
   }
 }
 
+/**
+ * Points each cut-out's drop shadow away from the light that reaches it most, longer the closer
+ * the light. Done once per room, from where the lights hang at rest: the paper filter re-runs
+ * when the shadow changes, so it must not follow every swing.
+ */
+function castShadows(c: Cache, lamps: Lamp[]) {
+  for (const f of c.flats) {
+    let best: Lamp | null = null;
+    let reach = 0;
+    for (const l of lamps) {
+      if (l.z < f.z) continue;
+      const e = l.power / ((l.x - f.x) ** 2 + (l.y - f.y) ** 2 + (l.z - f.z) ** 2 + 1);
+      if (e > reach) {
+        reach = e;
+        best = l;
+      }
+    }
+    if (!best) continue;
+    const dx = f.x - best.x;
+    const dy = f.y - best.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const dist = Math.hypot(dx, dy, best.z - f.z);
+    const size = 3 + 6 * Math.min(1, REF / dist);
+    f.el.style.setProperty('--sx', `${((dx / len) * size).toFixed(1)}px`);
+    f.el.style.setProperty('--sy', `${((dy / len) * size).toFixed(1)}px`);
+  }
+}
+
 const angle = (el: Element) => parseFloat(getComputedStyle(el).rotate) || 0;
 
 type Cache = {
@@ -96,6 +124,7 @@ type Cache = {
   planes: HTMLElement[];
   hangers: HTMLElement[];
   flats: { el: HTMLElement; x: number; y: number; z: number; glow: number; warm: number }[];
+  shadowed: boolean;
 };
 const caches = new WeakMap<HTMLElement, Cache>();
 
@@ -113,6 +142,7 @@ function cacheFor(comp: HTMLElement): Cache | null {
         const [x, y, z] = el.dataset.at!.split(' ').map(Number);
         return { el, x, y, z, glow: -1, warm: -1 };
       }),
+      shadowed: false,
     };
     caches.set(comp, c);
   }
@@ -140,6 +170,11 @@ export function lightRoom(comp: HTMLElement, rig: Rig, t: number) {
     // The swing turns about the hook; positive CSS rotation moves the bottom to the left.
     return [{ x: hx - Math.sin(a) * drop, y: -h / 2 + Math.cos(a) * drop, z: hz, rgb: el.dataset.light!, power, warmth: spec.warmth }];
   });
+
+  if (!c.shadowed) {
+    castShadows(c, lamps);
+    c.shadowed = true;
+  }
 
   for (const el of c.planes) {
     el.style.background = lamps

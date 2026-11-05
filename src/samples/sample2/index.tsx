@@ -49,6 +49,24 @@ function PaperDefs() {
         <feBlend in="cut" in2="grain" mode="multiply" result="toned" />
         <feComposite in="toned" in2="cut" operator="in" />
       </filter>
+      {/* Foil papers: a diagonal sheen plus a fleck of glitter on top. */}
+      <linearGradient id="s2-foil-gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#f6d266" />
+        <stop offset="0.42" stopColor="#fff4c2" />
+        <stop offset="0.56" stopColor="#e2ad3c" />
+        <stop offset="1" stopColor="#f3cd62" />
+      </linearGradient>
+      <linearGradient id="s2-foil-silver" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#e3e9f6" />
+        <stop offset="0.42" stopColor="#ffffff" />
+        <stop offset="0.58" stopColor="#b6c1d8" />
+        <stop offset="1" stopColor="#dde4f2" />
+      </linearGradient>
+      <pattern id="s2-glitter" width="9" height="9" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="3" r="0.7" fill="#fff" opacity="0.9" />
+        <circle cx="6.5" cy="7" r="0.5" fill="#fff" opacity="0.7" />
+        <circle cx="7" cy="1.5" r="0.4" fill="#fff8d8" opacity="0.8" />
+      </pattern>
     </svg>
   );
 }

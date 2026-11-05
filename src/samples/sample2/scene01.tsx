@@ -115,15 +115,17 @@ function Grass({ z, h, tone, seed }: { z: number; h: number; tone: [string, stri
   );
 }
 
-/** A hanging paper cloud; its top bump meets the chain. */
+/** A hanging tracing-paper cloud; its top bump meets the chain. */
 function Cloud({ size: s }: { size: number }) {
   return (
     <>
-      <circle cx={s * 0.5} cy={s * 0.28} r={s * 0.26} fill="#fbf5e9" />
-      <circle cx={s * 0.26} cy={s * 0.44} r={s * 0.18} fill="#fbf5e9" />
-      <circle cx={s * 0.74} cy={s * 0.42} r={s * 0.2} fill="#fbf5e9" />
-      <rect x={s * 0.08} y={s * 0.4} width={s * 0.84} height={s * 0.2} rx={s * 0.1} fill="#fbf5e9" />
-      <rect x={s * 0.14} y={s * 0.52} width={s * 0.72} height={s * 0.08} rx={s * 0.04} fill="#e6dfd2" />
+      {/* Tracing paper: each piece is translucent, so the overlaps read as layered sheets. */}
+      <g fill="#ffffff" fillOpacity={0.5}>
+        <circle cx={s * 0.5} cy={s * 0.28} r={s * 0.26} />
+        <circle cx={s * 0.26} cy={s * 0.44} r={s * 0.18} />
+        <circle cx={s * 0.74} cy={s * 0.42} r={s * 0.2} />
+        <rect x={s * 0.08} y={s * 0.4} width={s * 0.84} height={s * 0.2} rx={s * 0.1} />
+      </g>
     </>
   );
 }
@@ -142,8 +144,8 @@ function Sun({ size: s }: { size: number }) {
   return (
     <g transform={`translate(0 ${-s * 0.04})`}>
       {rays}
-      <circle cx={c} cy={c} r={r} fill="#ffcf5a" />
-      <circle cx={c - r * 0.35} cy={c - r * 0.3} r={r * 0.22} fill="#ffe08a" />
+      <circle cx={c} cy={c} r={r} fill="url(#s2-foil-gold)" />
+      <circle cx={c} cy={c} r={r} fill="url(#s2-glitter)" />
     </g>
   );
 }

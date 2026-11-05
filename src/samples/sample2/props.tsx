@@ -12,9 +12,18 @@ const star = (cx: number, cy: number, R: number, r: number) =>
     return `${(cx + Math.cos(a) * k).toFixed(2)},${(cy + Math.sin(a) * k).toFixed(2)}`;
   }).join(' ');
 
-export function Star({ size, fill = '#ffd34f' }: { size: number; fill?: string }) {
+/** A cut star. `fill="foil"` (the default) makes it gold foil with glitter; any colour is matte paper. */
+export function Star({ size, fill = 'foil' }: { size: number; fill?: string }) {
   const R = size / 2 - 1;
-  return <polygon points={star(size / 2, R + 1, R, R * 0.48)} fill={fill} />;
+  const points = star(size / 2, R + 1, R, R * 0.48);
+  return fill === 'foil' ? (
+    <>
+      <polygon points={points} fill="url(#s2-foil-gold)" />
+      <polygon points={points} fill="url(#s2-glitter)" />
+    </>
+  ) : (
+    <polygon points={points} fill={fill} />
+  );
 }
 
 /** Tall foreground clump that overlaps the frame, so the stage reads as seen past something. */

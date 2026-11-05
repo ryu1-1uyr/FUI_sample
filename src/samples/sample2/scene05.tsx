@@ -60,7 +60,8 @@ export function AtticSky({ down }: { down: () => void }) {
       </Flat>
       <Flat x={170} y={-280} z={FAR + 40} w={200} h={200}>
         <svg viewBox="0 0 200 200" width={200} height={200}>
-          <path d="M130 10A90 90 0 1 0 130 190A100 100 0 0 1 130 10Z" fill="#ffe08a" />
+          <path d="M130 10A90 90 0 1 0 130 190A100 100 0 0 1 130 10Z" fill="url(#s2-foil-silver)" />
+          <path d="M130 10A90 90 0 1 0 130 190A100 100 0 0 1 130 10Z" fill="url(#s2-glitter)" />
         </svg>
       </Flat>
       {STARS.map(([x, y, z, size], i) => (

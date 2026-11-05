@@ -185,11 +185,11 @@ export function NightField({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic
         <rect x={10} y={50} width={24} height={6} rx={2} fill="#6b4a3a" />
       </Hanger>
       <Hanger x={190} z={90} chain={112} size={84} period={5.2} phase={1.6} onClick={toAttic} label="天井裏の空へ" glow="140 175 255">
-        <path d="M54 4A36 36 0 1 0 54 72A40 40 0 0 1 54 4Z" fill="#fff0b8" transform="translate(0 -4)" />
+        <path d="M54 4A36 36 0 1 0 54 72A40 40 0 0 1 54 4Z" fill="url(#s2-foil-silver)" transform="translate(0 -4)" />
         <circle cx={26} cy={34} r={3} fill="#e8d38e" />
       </Hanger>
       <Hanger x={-250} z={220} chain={80} size={32} period={3.8} phase={0.9} onClick={toAttic} label="天井裏の空へ">
-        <Star size={32} fill="#ffe27a" />
+        <Star size={32} />
       </Hanger>
       <Hanger x={20} z={40} chain={170} size={26} period={3.3} phase={2.4} onClick={toAttic} label="天井裏の空へ">
         <Star size={26} fill="#ffe9a0" />
