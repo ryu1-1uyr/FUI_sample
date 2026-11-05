@@ -18,22 +18,26 @@ const pathAt = (z: number): [number, number] => {
 /** Floor art is drawn W x D with the back edge at the top. */
 const floorY = (z: number) => z - BACK;
 
+/**
+ * Far clouds are drawn simpler than the hanging ones: one flat-bottomed silhouette with one or
+ * two soft humps, in a single pale tone, so distance reads as less detail.
+ */
+const FAR_CLOUD = '#e6f3f6';
+const farCloud = (x: number, y: number, w: number, h: number, humps: 1 | 2) => {
+  const p = (fx: number, fy: number) => `${(x + fx * w).toFixed(1)} ${(y + fy * h).toFixed(1)}`;
+  return humps === 1
+    ? `M${p(0.06, 1)}Q${p(0, 0.62)} ${p(0.2, 0.6)}Q${p(0.45, 0)} ${p(0.72, 0.5)}Q${p(0.98, 0.5)} ${p(0.94, 1)}Z`
+    : `M${p(0.06, 1)}Q${p(0, 0.6)} ${p(0.18, 0.6)}Q${p(0.27, 0.1)} ${p(0.44, 0.4)}Q${p(0.58, 0)} ${p(0.74, 0.44)}Q${p(0.97, 0.42)} ${p(0.94, 1)}Z`;
+};
+
 export const storefrontSurfaces: Surfaces = {
   ceiling: '#c9a073',
   back: (
     <svg viewBox="0 0 800 520" width="100%" height="100%" className="s2-tex">
       <rect width="800" height="520" fill="#a9d9e7" />
       <rect width="800" height="170" fill="#9bd1e2" />
-      <g fill="#fbf5e9">
-        <circle cx="180" cy="150" r="26" />
-        <circle cx="212" cy="138" r="34" />
-        <circle cx="248" cy="152" r="24" />
-        <rect x="160" y="150" width="108" height="26" rx="13" />
-        <circle cx="590" cy="110" r="18" />
-        <circle cx="614" cy="100" r="24" />
-        <circle cx="640" cy="112" r="16" />
-        <rect x="574" y="110" width="80" height="18" rx="9" />
-      </g>
+      <path d={farCloud(150, 120, 130, 44, 2)} fill={FAR_CLOUD} />
+      <path d={farCloud(560, 88, 96, 32, 1)} fill={FAR_CLOUD} />
       <path d="M0 520V400Q200 330 400 380T800 360V520Z" fill="#b2d79c" />
       <path d="M0 520V440Q260 390 520 430T800 420V520Z" fill="#9fcd8c" />
     </svg>
@@ -171,12 +175,9 @@ export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void;
         [-210, -170, BACK + 40, 150, 22, 0],
         [230, -200, BACK + 90, 120, 16, 7],
       ].map(([x, y, z, w, period, phase]) => (
-        <Flat key={x} x={x} y={y} z={z} w={w} h={w * 0.45} className="s2-drift" style={tempo(period, phase, '26px')}>
-          <svg viewBox="0 0 100 45" width={w} height={w * 0.45}>
-            <circle cx={30} cy={26} r={16} fill="#fbf5e9" />
-            <circle cx={52} cy={20} r={20} fill="#fbf5e9" />
-            <circle cx={74} cy={28} r={13} fill="#fbf5e9" />
-            <rect x={16} y={26} width={70} height={16} rx={8} fill="#fbf5e9" />
+        <Flat key={x} x={x} y={y} z={z} w={w} h={w * 0.3} className="s2-drift" style={tempo(period, phase, '26px')}>
+          <svg viewBox={`0 0 ${w} ${w * 0.3}`} width={w} height={w * 0.3}>
+            <path d={farCloud(0, 0, w, w * 0.3, x < 0 ? 2 : 1)} fill={FAR_CLOUD} />
           </svg>
         </Flat>
       ))}
