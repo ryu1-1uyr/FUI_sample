@@ -444,6 +444,8 @@ export function Hanger({
     '--fog': fogAt(z).toFixed(3),
     '--period': `${period}s`,
     '--phase': `${-phase}s`,
+    // How far the turntable's inertia throws it: hangers nearer the window are farther from the axis.
+    '--reach': (0.4 + 0.6 * Math.min(1, Math.max(0, z / FRONT))).toFixed(2),
   } as CSSProperties;
   return (
     <button

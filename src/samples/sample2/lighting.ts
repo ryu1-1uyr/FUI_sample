@@ -117,6 +117,11 @@ function castShadows(c: Cache, lamps: Lamp[]) {
 }
 
 const angle = (el: Element) => parseFloat(getComputedStyle(el).rotate) || 0;
+/** Rotation carried in `transform` (the turntable's inertia on the knock layer), in degrees. */
+const turned = (el: Element) => {
+  const m = new DOMMatrix(getComputedStyle(el).transform);
+  return (Math.atan2(m.b, m.a) * 180) / Math.PI;
+};
 
 type Cache = {
   room: HTMLElement;
@@ -166,7 +171,8 @@ export function lightRoom(comp: HTMLElement, rig: Rig, t: number) {
     const el = c.hangers[hanger++];
     if (!el) return [];
     const [hx, hz, drop] = el.dataset.hook!.split(' ').map(Number);
-    const a = (angle(el) + angle(el.firstElementChild!)) * (Math.PI / 180);
+    const knock = el.firstElementChild!;
+    const a = (angle(el) + angle(knock) + turned(knock)) * (Math.PI / 180);
     // The swing turns about the hook; positive CSS rotation moves the bottom to the left.
     return [{ x: hx - Math.sin(a) * drop, y: -h / 2 + Math.cos(a) * drop, z: hz, rgb: el.dataset.light!, power, warmth: spec.warmth }];
   });

@@ -26,6 +26,11 @@ const TURN = [1.15, 0.14] as const;
 const LIFT = [1.0, 0.08] as const;
 /** Max pointer tilt (deg): yaw, and pitch looking up / down. Looking down shows little more than
  * the lid, so that side is kept small; yaw goes far enough to see into the side opening. */
+/**
+ * Pendulum the turntable's acceleration drives: about 1.2s period, lightly damped, sized so a
+ * quarter turn swings the farthest hangers about 10 degrees.
+ */
+const INERTIA = { k: (2 * Math.PI / 1.2) ** 2, c: 1.6, gain: 0.5 };
 const TILT = [26, 7, 2.5] as const;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -354,11 +359,22 @@ function App() {
     let raf = 0;
     let last = performance.now();
     const lit = new Map<SceneId, number>();
+    // Hanging cut-outs lag behind the turntable: a damped pendulum driven by its angular acceleration.
+    const sway = { angle: 0, v: 0, yawV: 0 };
     const frame = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
       const { yaw, pitch } = pose.current;
+      const yawV = yaw.v;
       stepSpring(yaw, dt, ...TURN);
+      const accel = dt > 0 ? (yaw.v - yawV) / dt : 0;
+      if (!reduced) {
+        for (let left = Math.min(dt, 0.1); left > 0; left -= 1 / 240) {
+          const h = Math.min(left, 1 / 240);
+          sway.v += (-INERTIA.k * sway.angle - INERTIA.c * sway.v + INERTIA.gain * accel) * h;
+          sway.angle += sway.v * h;
+        }
+      }
       stepSpring(pitch, dt, ...LIFT);
 
       const p = pointer.current;
@@ -376,6 +392,7 @@ function App() {
       const tz = -W / 2 + up * (W / 2 - LID - LID_BACK);
       boxRef.current!.style.transform = `translateZ(${tz.toFixed(2)}px) rotateX(${pitch.x.toFixed(3)}deg)`;
       tableRef.current!.style.transform = `rotateY(${yaw.x.toFixed(3)}deg)`;
+      tableRef.current!.style.setProperty('--inertia', `${sway.angle.toFixed(3)}deg`);
 
       // Same chain as the DOM above, so each window knows where the camera is.
       const box = new DOMMatrix()
