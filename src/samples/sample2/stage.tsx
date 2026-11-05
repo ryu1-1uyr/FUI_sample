@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode, Ref } from 'react';
+import type { AnimationEvent, CSSProperties, PointerEvent, ReactNode, Ref } from 'react';
 import { D, H, T, W } from './scenes';
 
 // Geometry. The box is a W x H x W cube whose four sides and lid are windows. Behind each
@@ -25,6 +25,8 @@ type FlatProps = {
   label?: string;
   /** Casts a contact shadow on the floor behind the cut-out (for things standing on the floor). */
   grounded?: boolean;
+  onPointerEnter?: (e: PointerEvent<HTMLElement>) => void;
+  onAnimationEnd?: (e: AnimationEvent<HTMLElement>) => void;
 };
 
 /** Aerial perspective: 0 at the window, 1 at the back wall. Far layers fade toward the air. */
@@ -35,7 +37,7 @@ const fogAt = (z: number) => Math.min(1, Math.max(0, (FRONT - z) / D));
  * placement and the lighting (cheap to change per frame); the inner one carries the paper
  * texture and drop shadow, which are rasterised once.
  */
-export function Flat({ x, y, z, w, h, className = '', style, children, onClick, label, grounded }: FlatProps) {
+export function Flat({ x, y, z, w, h, className = '', style, children, onClick, label, grounded, ...events }: FlatProps) {
   const pos = {
     left: x - w / 2,
     top: y,
@@ -47,11 +49,11 @@ export function Flat({ x, y, z, w, h, className = '', style, children, onClick, 
   } as CSSProperties;
   const inner = <div className="s2-paper">{children}</div>;
   const flat = onClick ? (
-    <button type="button" className={`s2-flat s2-hit ${className}`} style={pos} onClick={onClick} aria-label={label}>
+    <button type="button" className={`s2-flat s2-hit ${className}`} style={pos} onClick={onClick} aria-label={label} {...events}>
       {inner}
     </button>
   ) : (
-    <div className={`s2-flat ${className}`} style={pos}>
+    <div className={`s2-flat ${className}`} style={pos} {...events}>
       {inner}
     </div>
   );
@@ -346,6 +348,26 @@ export function aimPortal(el: HTMLElement, toWindow: DOMMatrix, camera: DOMPoint
   el.style.perspectiveOrigin = `${c.x.toFixed(2)}px ${c.y.toFixed(2)}px`;
 }
 
+/**
+ * Brushing past a hanging cut-out knocks it: a damped swing away from the side the pointer
+ * came from, added on top of its idle swing. Re-entering mid-swing knocks it again.
+ */
+function nudge(e: PointerEvent<HTMLElement>) {
+  const el = e.currentTarget;
+  const box = el.getBoundingClientRect();
+  // Rotation is about the hook, so a pointer moving right pushes the bottom right (negative).
+  // Fall back to the entry side when the pointer gives no movement.
+  const rightward = e.movementX ? e.movementX > 0 : e.clientX < box.left + box.width / 2;
+  el.style.setProperty('--nudge', rightward ? '-1' : '1');
+  el.classList.remove('s2-nudged');
+  void el.offsetWidth;
+  el.classList.add('s2-nudged');
+}
+
+function settle(e: AnimationEvent<HTMLElement>) {
+  if (e.animationName === 's2-nudge') e.currentTarget.classList.remove('s2-nudged');
+}
+
 /** Hanging cut-out: a chain from the ceiling down to `children`, swinging about the hook. */
 export function Hanger({
   x,
@@ -380,6 +402,8 @@ export function Hanger({
       style={{ '--period': `${period}s`, '--phase': `${-phase}s` } as CSSProperties}
       onClick={onClick}
       label={label}
+      onPointerEnter={nudge}
+      onAnimationEnd={settle}
     >
       <svg viewBox={`0 0 ${size} ${chain + size}`} width={size} height={chain + size}>
         <circle cx={size / 2} cy={2} r={4} fill="#8a7a63" />

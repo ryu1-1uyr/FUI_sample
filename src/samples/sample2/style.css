@@ -180,6 +180,38 @@
   filter: url(#s2-paper) drop-shadow(0 0 6px rgb(255 228 150 / 0.9));
 }
 
+/* A knock from the pointer. It runs on the inner layer, so it nests inside the idle swing on
+   the outer one instead of replacing it; will-change keeps the paper filter from re-running. */
+.s2-hanger > .s2-paper {
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.s2-hanger.s2-nudged > .s2-paper {
+  animation: s2-nudge 1.8s ease-in-out;
+}
+
+@keyframes s2-nudge {
+  0% {
+    rotate: z 0deg;
+  }
+  18% {
+    rotate: z calc(var(--nudge) * 10deg);
+  }
+  42% {
+    rotate: z calc(var(--nudge) * -6deg);
+  }
+  64% {
+    rotate: z calc(var(--nudge) * 3.5deg);
+  }
+  84% {
+    rotate: z calc(var(--nudge) * -1.5deg);
+  }
+  100% {
+    rotate: z 0deg;
+  }
+}
+
 @keyframes s2-bob {
   from {
     translate: -3px -8px;
@@ -715,6 +747,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .s2-hanger,
+  .s2-hanger.s2-nudged > .s2-paper,
   .s2-seed,
   .s2-sway,
   .s2-flutter,
