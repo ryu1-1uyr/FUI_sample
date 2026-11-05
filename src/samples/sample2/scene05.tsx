@@ -124,7 +124,7 @@ export function AtticSky({ down }: { down: () => void }) {
         </Flat>
       ))}
 
-      <Flat x={0} y={300} z={LID_Z - 30} w={120} h={110} onClick={down} label="舞台へ戻る" className="s2-sign">
+      <Flat x={0} y={262} z={LID_Z - 30} w={120} h={110} onClick={down} label="舞台へ戻る" className="s2-sign">
         <svg viewBox="0 0 120 110" width={120} height={110}>
           <polygon points="60,108 8,54 34,54 34,4 86,4 86,54 112,54" fill="#c9a86a" transform="translate(0 4)" />
           <polygon points="60,108 8,54 34,54 34,4 86,4 86,54 112,54" fill="#f2d39c" />
