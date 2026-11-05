@@ -1,4 +1,4 @@
-import { Cuboid, Flat, Hanger, Part, Solid, type Surfaces } from './stage';
+import { Cuboid, Flat, Hanger, Part, Solid, tempo, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
 import { DestTag, Star, destLabel } from './props';
 
@@ -97,27 +97,48 @@ function Bench() {
   );
 }
 
-/** Paper pieces drying on a line strung across the room. */
+const LINE_Z = 240;
+const LINE_Y = -H / 2 + 40;
+
+/**
+ * Paper pieces drying on a line strung across the room. Each piece is its own cut-out so it
+ * can flutter on its peg without re-rendering the paper texture.
+ */
 function Line() {
   const pieces = ['star', 'moon', 'tri', 'star', 'circ', 'tri', 'moon'];
   return (
-    <svg viewBox="0 0 720 90" width={720} height={90}>
-      <path d="M0 4Q360 40 720 4V8Q360 44 0 8Z" fill="#8a7a63" />
+    <>
+      <Flat x={0} y={LINE_Y} z={LINE_Z} w={720} h={50}>
+        <svg viewBox="0 0 720 50" width={720} height={50}>
+          <path d="M0 4Q360 40 720 4V8Q360 44 0 8Z" fill="#8a7a63" />
+        </svg>
+      </Flat>
       {pieces.map((k, i) => {
         const x = 60 + i * 100;
         const y = 6 + 30 * (1 - ((x - 360) / 360) ** 2);
         const fill = ['#ffd34f', '#fbf4e6', '#6f9fd8', '#e9b44c', '#7cb08a', '#c7a2d6', '#f2d39c'][i];
         return (
-          <g key={i} transform={`translate(${x - 18} ${y})`}>
-            <rect x={14} y={0} width={8} height={8} fill="#a06a45" />
-            {k === 'star' && <polygon points="18,6 23,18 36,18 26,26 30,38 18,31 6,38 10,26 0,18 13,18" fill={fill} />}
-            {k === 'moon' && <path d="M24 6A16 16 0 1 0 24 38A18 18 0 0 1 24 6Z" fill={fill} />}
-            {k === 'tri' && <polygon points="2,6 34,6 18,38" fill={fill} />}
-            {k === 'circ' && <circle cx={18} cy={22} r={15} fill={fill} />}
-          </g>
+          <Flat
+            key={i}
+            x={x - 360}
+            y={LINE_Y + y}
+            z={LINE_Z + 0.5}
+            w={36}
+            h={40}
+            className="s2-flutter"
+            style={tempo(2.6 + (i % 3) * 0.5, i * 0.8, '5deg')}
+          >
+            <svg viewBox="0 0 36 40" width={36} height={40}>
+              <rect x={14} y={0} width={8} height={8} fill="#a06a45" />
+              {k === 'star' && <polygon points="18,6 23,18 36,18 26,26 30,38 18,31 6,38 10,26 0,18 13,18" fill={fill} />}
+              {k === 'moon' && <path d="M24 6A16 16 0 1 0 24 38A18 18 0 0 1 24 6Z" fill={fill} />}
+              {k === 'tri' && <polygon points="2,6 34,6 18,38" fill={fill} />}
+              {k === 'circ' && <circle cx={18} cy={22} r={15} fill={fill} />}
+            </svg>
+          </Flat>
         );
       })}
-    </svg>
+    </>
   );
 }
 
@@ -162,13 +183,11 @@ export function Workshop({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void; t
         </svg>
       </Flat>
 
-      <Flat x={0} y={-H / 2 + 40} z={240} w={720} h={90}>
-        <Line />
-      </Flat>
+      <Line />
 
 
       <Solid x={-300} z={366} footprint={[84, 70]} onClick={() => go(-1)} label={destLabel(90)}>
-        <Part y={-60} z={-35} w={110} h={150}>
+        <Part y={-60} z={-35} w={110} h={150} className="s2-sway" style={tempo(5.4, 0.6, '1.6deg')}>
           <svg viewBox="0 0 110 150" width={110} height={150}>
             <path d="M55 150Q15 80 26 18Q60 60 55 150Z" fill="#5ea85a" />
             <path d="M55 150Q96 70 90 8Q50 70 55 150Z" fill="#4f9a4c" />

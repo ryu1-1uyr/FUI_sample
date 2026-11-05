@@ -170,7 +170,9 @@
 }
 
 .s2-seed {
-  animation: s2-bob var(--period) ease-in-out var(--phase) infinite alternate;
+  animation:
+    s2-bob var(--period) ease-in-out var(--phase) infinite alternate,
+    s2-pulse calc(var(--period) * 0.6) ease-in-out var(--phase) infinite alternate;
 }
 
 /* Seeds are the one thing in the scene that emits light. */
@@ -185,6 +187,105 @@
   to {
     translate: 3px 8px;
   }
+}
+
+/* Ambient motion. Each class reads --period, --phase and --amp (see `tempo`). */
+.s2-sway {
+  transform-origin: 50% 100%;
+  animation: s2-sway var(--period) ease-in-out var(--phase) infinite alternate;
+}
+
+.s2-flutter {
+  transform-origin: 50% 0;
+  animation: s2-sway var(--period) ease-in-out var(--phase) infinite alternate;
+}
+
+@keyframes s2-sway {
+  from {
+    rotate: z calc(var(--amp) * -1);
+  }
+  to {
+    rotate: z var(--amp);
+  }
+}
+
+.s2-drift {
+  animation: s2-drift var(--period) ease-in-out var(--phase) infinite alternate;
+}
+
+@keyframes s2-drift {
+  from {
+    translate: calc(var(--amp) * -1) 0;
+  }
+  to {
+    translate: var(--amp) 0;
+  }
+}
+
+.s2-float {
+  animation: s2-float var(--period) ease-in-out var(--phase) infinite alternate;
+}
+
+@keyframes s2-float {
+  from {
+    translate: 0 calc(var(--amp) * -1);
+  }
+  to {
+    translate: 0 var(--amp);
+  }
+}
+
+.s2-smoke {
+  animation: s2-smoke var(--period) cubic-bezier(0.3, 0.6, 0.4, 1) var(--phase) infinite;
+}
+
+@keyframes s2-smoke {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    scale: 0.5;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    translate: 22px -96px;
+    scale: 1.5;
+  }
+}
+
+.s2-mote {
+  animation: s2-mote var(--period) linear var(--phase) infinite;
+}
+
+@keyframes s2-mote {
+  0% {
+    opacity: 0;
+    translate: 0 30px;
+  }
+  25%,
+  75% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    translate: 26px -50px;
+  }
+}
+
+@keyframes s2-pulse {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Only scenes in view keep moving. */
+.s2-comp:not([data-awake]) :is(.s2-hanger, .s2-seed, .s2-sway, .s2-flutter, .s2-drift, .s2-float, .s2-smoke, .s2-mote) {
+  animation-play-state: paused;
 }
 
 @keyframes s2-swing {
@@ -615,6 +716,12 @@
 @media (prefers-reduced-motion: reduce) {
   .s2-hanger,
   .s2-seed,
+  .s2-sway,
+  .s2-flutter,
+  .s2-drift,
+  .s2-float,
+  .s2-smoke,
+  .s2-mote,
   .s2-tag,
   .s2-stubs li,
   .s2-tag[data-moving] .s2-lamp {

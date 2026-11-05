@@ -1,4 +1,4 @@
-import { Flat, Hanger, type Surfaces } from './stage';
+import { Flat, Hanger, tempo, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
 import { BookStack } from './props';
 
@@ -64,6 +64,18 @@ export const archiveSurfaces: Surfaces = {
     </svg>
   ),
 };
+
+/** Dust motes in the window light: x, y, z, drift period. */
+const MOTES = [
+  [-20, -60, BACK + 160, 7],
+  [30, 0, BACK + 190, 8.5],
+  [70, 60, BACK + 220, 6.5],
+  [10, 110, BACK + 250, 9],
+  [100, -20, BACK + 210, 7.5],
+  [60, 130, BACK + 280, 8],
+  [130, 80, BACK + 300, 6.8],
+  [-10, 30, BACK + 230, 9.4],
+];
 
 function Parcel({ w, h, tone }: { w: number; h: number; tone: string }) {
   return (
@@ -147,6 +159,20 @@ export function Archive({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic: (
         </svg>
       </Flat>
 
+
+      {/* Morning light from the round window, with dust turning in it. */}
+      <Flat x={40} y={-150} z={BACK + 140} w={360} h={330}>
+        <svg viewBox="0 0 360 330" width={360} height={330}>
+          <polygon points="140,0 230,0 360,330 50,330" fill="#fff4dc" opacity={0.22} />
+        </svg>
+      </Flat>
+      {MOTES.map(([x, y, z, period], i) => (
+        <Flat key={i} x={x} y={y} z={z} w={6} h={6} className="s2-mote" style={tempo(period, i * 1.1, '0px')}>
+          <svg viewBox="0 0 6 6" width={6} height={6}>
+            <circle cx={3} cy={3} r={2.4} fill="#fff8e6" />
+          </svg>
+        </Flat>
+      ))}
 
       <BookStack
         x={-310}

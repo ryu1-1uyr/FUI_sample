@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { ATTIC_D, Flat, type Surfaces } from './stage';
+import { ATTIC_D, Flat, tempo, type Surfaces } from './stage';
 import { W } from './scenes';
 import { Star } from './props';
 
@@ -76,10 +76,11 @@ export function AtticSky({ down }: { down: () => void }) {
         </Flat>
       ))}
 
-      <Flat x={-150} y={-20} z={FAR + 130} w={320} h={130}>
+      <Flat x={-150} y={-20} z={FAR + 130} w={320} h={130} className="s2-drift" style={tempo(24, 0, '22px')}>
         <Cloud w={320} h={130} tone="#2c3770" />
       </Flat>
-      <Flat x={-30} y={-100} z={FAR + 200} w={120} h={190}>
+      {/* The boat and its rod float together on the same swell. */}
+      <Flat x={-30} y={-100} z={FAR + 200} w={120} h={190} className="s2-float" style={tempo(4.4, 0, '6px')}>
         <svg viewBox="0 0 120 190" width={120} height={190}>
           <path d="M20 190H28L96 8L90 4Z" fill="#8a6a4a" />
           <rect x={92} y={6} width={2} height={96} fill="#e9e2c0" />
@@ -88,16 +89,16 @@ export function AtticSky({ down }: { down: () => void }) {
           </g>
         </svg>
       </Flat>
-      <Flat x={-30} y={70} z={FAR + 202} w={220} h={70}>
+      <Flat x={-30} y={70} z={FAR + 202} w={220} h={70} className="s2-float" style={tempo(4.4, 0, '6px')}>
         <svg viewBox="0 0 220 70" width={220} height={70}>
           <path d="M0 10H220Q200 70 110 70Q20 70 0 10Z" fill="#f2d39c" />
           <path d="M0 10H220L212 24H8Z" fill="#d9b373" />
         </svg>
       </Flat>
-      <Flat x={220} y={140} z={FAR + 260} w={340} h={140}>
+      <Flat x={220} y={140} z={FAR + 260} w={340} h={140} className="s2-drift" style={tempo(19, 6, '30px')}>
         <Cloud w={340} h={140} tone="#36428a" />
       </Flat>
-      <Flat x={-250} y={-300} z={FAR + 290} w={260} h={110}>
+      <Flat x={-250} y={-300} z={FAR + 290} w={260} h={110} className="s2-drift" style={tempo(15, 3, '36px')}>
         <Cloud w={260} h={110} tone="#3c4996" />
       </Flat>
 
@@ -105,7 +106,16 @@ export function AtticSky({ down }: { down: () => void }) {
         [240, -170, FAR + 230, '#fbf4e6'],
         [-280, 230, FAR + 300, '#f2d39c'],
       ].map(([x, y, z, tone]) => (
-        <Flat key={String(x)} x={x as number} y={y as number} z={z as number} w={70} h={120}>
+        <Flat
+          key={String(x)}
+          x={x as number}
+          y={y as number}
+          z={z as number}
+          w={70}
+          h={120}
+          className="s2-flutter"
+          style={tempo((x as number) > 0 ? 1.8 : 2.3, 0, '6deg')}
+        >
           <svg viewBox="0 0 70 120" width={70} height={120}>
             <path d="M35 0L70 30L35 60L0 30Z" fill={tone as string} />
             <path d="M35 0L70 30H0Z" fill="#e9d6b0" opacity={0.6} />

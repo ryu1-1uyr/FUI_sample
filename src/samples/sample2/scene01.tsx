@@ -1,4 +1,4 @@
-import { Flat, Hanger, type Surfaces } from './stage';
+import { Flat, Hanger, tempo, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
 import { Script } from './script';
 import { Sign, Star, Tuft } from './props';
@@ -119,13 +119,34 @@ export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void;
           <path d="M0 110V60Q160 0 330 46T620 30Q720 20 800 50V110Z" fill="#94c780" />
         </svg>
       </Flat>
-      <Flat x={-290} y={FLOOR - 150} z={-120} w={90} h={150} grounded>
+      <Flat x={-290} y={FLOOR - 150} z={-120} w={90} h={150} grounded className="s2-sway" style={tempo(7, 1, '0.8deg')}>
         <Tree w={90} h={150} tone={['#6fb27a', '#63a86f', '#7abb83']} />
       </Flat>
-      <Flat x={300} y={FLOOR - 130} z={-80} w={80} h={130} grounded>
+      <Flat x={300} y={FLOOR - 130} z={-80} w={80} h={130} grounded className="s2-sway" style={tempo(6.2, 3, '0.8deg')}>
         <Tree w={80} h={130} tone={['#74b67b', '#68ac70', '#80c088']} />
       </Flat>
 
+      {/* Smoke from the chimney: someone is at work inside. */}
+      {[0, 1.6, 3.2].map((phase) => (
+        <Flat key={phase} x={51} y={FLOOR - 290 - 24} z={20.5} w={26} h={26} className="s2-smoke" style={tempo(4.8, phase, '0px')}>
+          <svg viewBox="0 0 26 26" width={26} height={26}>
+            <circle cx={13} cy={13} r={12} fill="#f4efe6" />
+          </svg>
+        </Flat>
+      ))}
+      {[
+        [-210, -170, BACK + 40, 150, 22, 0],
+        [230, -200, BACK + 90, 120, 16, 7],
+      ].map(([x, y, z, w, period, phase]) => (
+        <Flat key={x} x={x} y={y} z={z} w={w} h={w * 0.45} className="s2-drift" style={tempo(period, phase, '26px')}>
+          <svg viewBox="0 0 100 45" width={w} height={w * 0.45}>
+            <circle cx={30} cy={26} r={16} fill="#fbf5e9" />
+            <circle cx={52} cy={20} r={20} fill="#fbf5e9" />
+            <circle cx={74} cy={28} r={13} fill="#fbf5e9" />
+            <rect x={16} y={26} width={70} height={16} rx={8} fill="#fbf5e9" />
+          </svg>
+        </Flat>
+      ))}
       <Flat x={0} y={FLOOR - 290} z={20} w={230} h={290} grounded>
         <svg viewBox="0 0 230 290" width={230} height={290}>
           <rect x={146} y={30} width={40} height={12} fill="#9e523e" />
@@ -157,10 +178,10 @@ export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void;
       </Flat>
 
       <Grass z={70} h={16} tone={['#97cd7c', '#8cc572']} seed={1} />
-      <Flat x={-200} y={FLOOR - 210} z={130} w={120} h={210} grounded>
+      <Flat x={-200} y={FLOOR - 210} z={130} w={120} h={210} grounded className="s2-sway" style={tempo(6.6, 0, '1.1deg')}>
         <Tree w={120} h={210} tone={['#5ea96a', '#529c5f', '#6bb575']} />
       </Flat>
-      <Flat x={205} y={FLOOR - 180} z={150} w={100} h={180} grounded>
+      <Flat x={205} y={FLOOR - 180} z={150} w={100} h={180} grounded className="s2-sway" style={tempo(5.8, 2.2, '1.1deg')}>
         <Tree w={100} h={180} tone={['#68b071', '#5aa265', '#74bb7c']} />
       </Flat>
       <Grass z={200} h={20} tone={['#82bf69', '#77b660']} seed={2} />

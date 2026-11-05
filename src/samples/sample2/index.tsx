@@ -391,6 +391,7 @@ function App() {
           el.style.setProperty('--lit', l.toFixed(3));
         }
         el.toggleAttribute('data-live', weights[i] > 0.9);
+        el.toggleAttribute('data-awake', weights[i] > 0.02);
       });
 
       if (movingRef.current && settled(yaw) && settled(pitch)) {

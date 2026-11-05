@@ -168,6 +168,13 @@ export function Compartment({ theta, surfaces, children, ref }: CompartmentProps
   );
 }
 
+/**
+ * Timing for an ambient motion class (s2-sway, s2-drift, ...): period and phase in seconds,
+ * and the class's amplitude (deg or px, as the class expects).
+ */
+export const tempo = (period: number, phase: number, amp: string) =>
+  ({ '--period': `${period}s`, '--phase': `${-phase}s`, '--amp': amp }) as CSSProperties;
+
 /** One paper face of a solid. The face element is lit; its child carries the paper grain. */
 function Face({ w, h, t, shade, children }: { w: number; h: number; t: string; shade: number; children: ReactNode }) {
   return (
@@ -275,9 +282,30 @@ export function Solid({
 }
 
 /** A flat part inside a Solid (leaves, a standing card), centred at x with its bottom at y. */
-export function Part({ x = 0, y, z = 0, w, h, children }: { x?: number; y: number; z?: number; w: number; h: number; children: ReactNode }) {
+export function Part({
+  x = 0,
+  y,
+  z = 0,
+  w,
+  h,
+  className = '',
+  style,
+  children,
+}: {
+  x?: number;
+  y: number;
+  z?: number;
+  w: number;
+  h: number;
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+}) {
   return (
-    <div className="s2-face" style={{ left: x - w / 2, top: y - h, width: w, height: h, transform: `translateZ(${z}px)` }}>
+    <div
+      className={`s2-face ${className}`}
+      style={{ left: x - w / 2, top: y - h, width: w, height: h, transform: `translateZ(${z}px)`, ...style }}
+    >
       <div className="s2-paper">{children}</div>
     </div>
   );

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Flat, Hanger, type Surfaces } from './stage';
+import { Flat, Hanger, tempo, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
 import { Sign, Star, Tuft } from './props';
 
@@ -132,20 +132,20 @@ export function NightField({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic
           <path d="M0 90V50Q180 10 380 40T800 30V90Z" fill="#22305a" />
         </svg>
       </Flat>
-      <Flat x={-290} y={FLOOR - 230} z={40} w={110} h={230} grounded>
+      <Flat x={-290} y={FLOOR - 230} z={40} w={110} h={230} grounded className="s2-sway" style={tempo(7.4, 0, '0.7deg')}>
         <svg viewBox="0 0 110 230" width={110} height={230}>
           <rect x={49} y={190} width={12} height={40} fill="#2a2440" />
           <path d="M55 0L104 120H78L110 200H0L32 120H6Z" fill="#1c2b52" />
         </svg>
       </Flat>
-      <Flat x={300} y={FLOOR - 190} z={90} w={92} h={190} grounded>
+      <Flat x={300} y={FLOOR - 190} z={90} w={92} h={190} grounded className="s2-sway" style={tempo(6.8, 2.5, '0.7deg')}>
         <svg viewBox="0 0 92 190" width={92} height={190}>
           <rect x={40} y={156} width={12} height={34} fill="#2a2440" />
           <path d="M46 0L86 100H64L92 166H0L28 100H6Z" fill="#203159" />
         </svg>
       </Flat>
 
-      <Flat x={110} y={FLOOR - 220} z={170} w={170} h={220} grounded>
+      <Flat x={110} y={FLOOR - 220} z={170} w={170} h={220} grounded className="s2-sway" style={tempo(5.2, 1, '1.4deg')}>
         <Net />
       </Flat>
       <Flat x={-140} y={FLOOR - 130} z={120} w={190} h={130} grounded>
