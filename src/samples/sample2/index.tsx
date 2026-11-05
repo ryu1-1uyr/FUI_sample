@@ -22,10 +22,10 @@ const CAMERA = new DOMPoint(VIEW.w / 2, VIEW.h * VIEW.eyeY, VIEW.perspective);
 const LENS = 62;
 const STUBS = 5;
 /** Perceptual duration (s) and bounce of a quarter turn: a paper toy, so a little play. */
-const TURN = [1.15, 0.14] as const;
+const TURN = [0.95, 0.14] as const;
+/** How close (deg) a turn must be to its target before the arriving scene starts standing up. */
+const ARRIVE = 10;
 const LIFT = [1.0, 0.08] as const;
-/** Max pointer tilt (deg): yaw, and pitch looking up / down. Looking down shows little more than
- * the lid, so that side is kept small; yaw goes far enough to see into the side opening. */
 /**
  * Pendulum the turntable's acceleration drives: about 1.2s period, lightly damped, sized so a
  * quarter turn swings the farthest hangers about 10 degrees.
@@ -37,6 +37,8 @@ type Boot = 'closed' | 'raising' | 'open';
  * the latest the pop-up starts if the curtain never reports it has risen.
  */
 const BOOT = { panels: 100, settle: 1200, fallback: 3000 };
+/** Max pointer tilt (deg): yaw, and pitch looking up / down. Looking down shows little more than
+ * the lid, so that side is kept small; yaw goes far enough to see into the side opening. */
 const TILT = [26, 7, 2.5] as const;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -484,9 +486,13 @@ function App() {
         el.toggleAttribute('data-folded', !reduced && s.id !== shownRef.current);
       });
 
+      // Respond first, finish after: the arriving scene stands up while the turn is still easing in,
+      // and only the stub and the status wait for the turn to come fully to rest.
+      if (movingRef.current && Math.abs(yaw.x - yaw.target) < ARRIVE && Math.abs(pitch.x - pitch.target) < ARRIVE) {
+        shownRef.current = targetRef.current;
+      }
       if (movingRef.current && settled(yaw) && settled(pitch)) {
         movingRef.current = false;
-        shownRef.current = targetRef.current;
         setMoving(false);
         logStub(targetRef.current);
       }
