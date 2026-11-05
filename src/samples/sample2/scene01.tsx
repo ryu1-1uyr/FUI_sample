@@ -1,10 +1,10 @@
 import { Flat, Hanger, tempo, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
 import { Script } from './script';
-import { Sign, Star, Tuft } from './props';
+import { Sign, Tuft } from './props';
 
-// 01 // Storefront, daytime. The shop sits deep in its room; the hanging mobile leads up to
-// the attic, the standing signs lead to the neighbouring sides, the door leads inside.
+// 01 // Storefront, daytime. The shop sits deep in its room; the hanging sun and clouds lead up
+// to the attic, the standing signs lead to the neighbouring sides, the door leads inside.
 
 const FLOOR = H / 2;
 const BACK = W / 2 - D;
@@ -111,6 +111,39 @@ function Grass({ z, h, tone, seed }: { z: number; h: number; tone: [string, stri
   );
 }
 
+/** A hanging paper cloud; its top bump meets the chain. */
+function Cloud({ size: s }: { size: number }) {
+  return (
+    <>
+      <circle cx={s * 0.5} cy={s * 0.28} r={s * 0.26} fill="#fbf5e9" />
+      <circle cx={s * 0.26} cy={s * 0.44} r={s * 0.18} fill="#fbf5e9" />
+      <circle cx={s * 0.74} cy={s * 0.42} r={s * 0.2} fill="#fbf5e9" />
+      <rect x={s * 0.08} y={s * 0.4} width={s * 0.84} height={s * 0.2} rx={s * 0.1} fill="#fbf5e9" />
+      <rect x={s * 0.14} y={s * 0.52} width={s * 0.72} height={s * 0.08} rx={s * 0.04} fill="#e6dfd2" />
+    </>
+  );
+}
+
+/** A hanging paper sun with cut rays; the top ray meets the chain. */
+function Sun({ size: s }: { size: number }) {
+  const c = s / 2;
+  const r = s * 0.27;
+  const rays = Array.from({ length: 10 }, (_, i) => {
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    const tip = s * 0.46;
+    const side = (Math.PI / 5) * 0.35;
+    const p = (ang: number, k: number) => `${(c + Math.cos(ang) * k).toFixed(1)},${(c + Math.sin(ang) * k).toFixed(1)}`;
+    return <polygon key={i} points={`${p(a - side, r)} ${p(a, tip)} ${p(a + side, r)}`} fill="#ffb84a" />;
+  });
+  return (
+    <g transform={`translate(0 ${-s * 0.04})`}>
+      {rays}
+      <circle cx={c} cy={c} r={r} fill="#ffcf5a" />
+      <circle cx={c - r * 0.35} cy={c - r * 0.3} r={r * 0.22} fill="#ffe08a" />
+    </g>
+  );
+}
+
 export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void; toAttic: () => void; toBack: () => void }) {
   return (
     <>
@@ -203,21 +236,20 @@ export function Storefront({ go, toAttic, toBack }: { go: (dir: -1 | 1) => void;
         <Tuft w={70} h={74} />
       </Flat>
 
-      <Hanger x={-70} z={-40} chain={190} size={34} period={3.6} phase={2.2} onClick={toAttic} label="天井裏の空へ">
-        <Star size={34} fill="#ffe27a" />
+      <Hanger x={-70} z={-40} chain={180} size={52} period={4.2} phase={2.2} onClick={toAttic} label="天井裏の空へ">
+        <Cloud size={52} />
       </Hanger>
-      <Hanger x={130} z={90} chain={120} size={84} period={5.2} phase={0} onClick={toAttic} label="天井裏の空へ">
-        <path d="M54 4A36 36 0 1 0 54 72A40 40 0 0 1 54 4Z" fill="#ffe08a" transform="translate(0 -4)" />
-        <circle cx={26} cy={34} r={3} fill="#e0b45a" />
+      <Hanger x={130} z={90} chain={112} size={84} period={5.2} phase={0} onClick={toAttic} label="天井裏の空へ">
+        <Sun size={84} />
       </Hanger>
-      <Hanger x={40} z={230} chain={92} size={30} period={3.2} phase={0.7} onClick={toAttic} label="天井裏の空へ">
-        <Star size={30} fill="#ffe9a0" />
+      <Hanger x={30} z={230} chain={92} size={44} period={3.6} phase={0.7} onClick={toAttic} label="天井裏の空へ">
+        <Cloud size={44} />
       </Hanger>
-      <Hanger x={-160} z={350} chain={44} size={58} period={4.1} phase={1.3} onClick={toAttic} label="天井裏の空へ">
-        <Star size={58} />
+      <Hanger x={-170} z={350} chain={40} size={76} period={4.6} phase={1.3} onClick={toAttic} label="天井裏の空へ">
+        <Cloud size={76} />
       </Hanger>
-      <Hanger x={250} z={380} chain={30} size={46} period={4.6} phase={3.1} onClick={toAttic} label="天井裏の空へ">
-        <Star size={46} />
+      <Hanger x={250} z={380} chain={30} size={60} period={5} phase={3.1} onClick={toAttic} label="天井裏の空へ">
+        <Cloud size={60} />
       </Hanger>
     </>
   );

@@ -4,8 +4,8 @@ import { D, H, W } from './scenes';
 import { Sign, Star, Tuft } from './props';
 
 // 02 // Night gathering. Story seeds drift over a meadow at night; a net is planted where they
-// were being caught, and the filled jars wait on a cart. The lantern and stars on the ceiling
-// lead up to the attic.
+// were being caught, and the filled jars wait on a cart. The moon, lantern and stars on the
+// ceiling lead up to the attic.
 
 const FLOOR = H / 2;
 const BACK = W / 2 - D;
@@ -34,8 +34,6 @@ export const nightSurfaces: Surfaces = {
   back: (
     <svg viewBox="0 0 800 520" width="100%" height="100%" className="s2-tex">
       {sky(800)}
-      <circle cx="610" cy="150" r="46" fill="#fff0b8" />
-      <circle cx="590" cy="140" r="8" fill="#f2dfa0" />
       <g fill="#e9e2c0">
         <circle cx="120" cy="90" r="2.5" />
         <circle cx="260" cy="150" r="2" />
@@ -186,7 +184,11 @@ export function NightField({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic
         <rect x={13} y={15} width={18} height={28} rx={6} fill="#fff0b8" />
         <rect x={10} y={50} width={24} height={6} rx={2} fill="#6b4a3a" />
       </Hanger>
-      <Hanger x={180} z={200} chain={110} size={32} period={3.8} phase={1.6} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={190} z={90} chain={112} size={84} period={5.2} phase={1.6} onClick={toAttic} label="天井裏の空へ">
+        <path d="M54 4A36 36 0 1 0 54 72A40 40 0 0 1 54 4Z" fill="#fff0b8" transform="translate(0 -4)" />
+        <circle cx={26} cy={34} r={3} fill="#e8d38e" />
+      </Hanger>
+      <Hanger x={-250} z={220} chain={80} size={32} period={3.8} phase={0.9} onClick={toAttic} label="天井裏の空へ">
         <Star size={32} fill="#ffe27a" />
       </Hanger>
       <Hanger x={20} z={40} chain={170} size={26} period={3.3} phase={2.4} onClick={toAttic} label="天井裏の空へ">
