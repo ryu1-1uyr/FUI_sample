@@ -324,8 +324,10 @@ export const LID = H / 2 + T;
  */
 export function Attic({ surfaces, children, ref }: { surfaces: Surfaces; children: ReactNode; ref?: Ref<HTMLDivElement> }) {
   return (
-    <div ref={ref} className="s2-comp">
-      <Portal w={W} h={W} depth={ATTIC_D} surfaces={surfaces} transform={`rotateX(90deg) translateZ(${LID}px)`}>
+    // The turn lives on the wrapper, not the window: with the box pitched to -90deg an untransformed
+    // wrapper is edge-on, and Chrome then skips its whole subtree when hit-testing.
+    <div ref={ref} className="s2-comp" style={{ transform: 'rotateX(90deg)' }}>
+      <Portal w={W} h={W} depth={ATTIC_D} surfaces={surfaces} transform={`translateZ(${LID}px)`}>
         {children}
       </Portal>
     </div>

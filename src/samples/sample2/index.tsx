@@ -224,6 +224,8 @@ function App() {
   const pose = useRef({ yaw: spring(0), pitch: spring(0) });
   const pointer = useRef({ x: 0, y: 0, sx: 0, sy: 0, cx: -1e4, cy: -1e4 });
   const targetRef = useRef<SceneId>('s01');
+  /** The scene shown before the current one, for the attic's way back down. */
+  const prevRef = useRef<SceneId | null>(null);
   const movingRef = useRef(false);
   const loupeRef = useRef(false);
   const t0 = useRef(performance.now());
@@ -259,6 +261,7 @@ function App() {
       void view.offsetWidth;
       view.classList.add('s2-cut');
     }
+    prevRef.current = targetRef.current;
     targetRef.current = id;
     movingRef.current = true;
     setTarget(id);
@@ -268,7 +271,8 @@ function App() {
   /** The compartment currently facing front (or under the attic). */
   const frontTheta = () => mod360(-pose.current.yaw.target);
   const turn = useCallback((dir: -1 | 1) => goTo(sceneAtTheta(frontTheta() + dir * 90).id), [goTo]);
-  const toFront = useCallback(() => goTo(sceneAtTheta(frontTheta()).id), [goTo]);
+  /** Back to the previous scene; without one, down to the side under the lid. */
+  const back = useCallback(() => goTo(prevRef.current ?? sceneAtTheta(frontTheta()).id), [goTo]);
   const toBack = useCallback(() => goTo(sceneAtTheta(frontTheta() + 180).id), [goTo]);
   const toAttic = useCallback(() => goTo('s05'), [goTo]);
   const toggleLoupe = useCallback(() => {
@@ -303,7 +307,7 @@ function App() {
       if (k === 'ArrowLeft') turn(-1);
       else if (k === 'ArrowRight') turn(1);
       else if (k === 'ArrowUp') toAttic();
-      else if (k === 'ArrowDown') toFront();
+      else if (k === 'ArrowDown' && targetRef.current === 's05') back();
       else if (k === 'l') toggleLoupe();
       else if (k === 'Escape' && loupeRef.current) toggleLoupe();
       else return;
@@ -417,7 +421,7 @@ function App() {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, [logStub, turn, toAttic, toFront, toggleLoupe]);
+  }, [logStub, turn, toAttic, back, toggleLoupe]);
 
   const setComp = (id: SceneId) => (el: HTMLDivElement | null) => {
     if (el) compRefs.current.set(id, el);
@@ -457,7 +461,7 @@ function App() {
               </Compartment>
             </div>
             <Attic surfaces={atticSurfaces} ref={setComp('s05')}>
-              <AtticSky down={toFront} />
+              <AtticSky down={back} />
             </Attic>
           </div>
         </div>
