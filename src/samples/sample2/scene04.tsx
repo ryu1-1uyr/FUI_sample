@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Flat, Hanger, tempo, type Surfaces } from './stage';
 import { D, H, W } from './scenes';
 import { BookStack } from './props';
@@ -28,6 +29,17 @@ const PANES = [-1, 1].map((side) => {
   const half = Math.sqrt(WIN.r ** 2 - (y - WIN.y) ** 2);
   return { y, width: half * 2, length: ((FLOOR - y) * ALONG) };
 });
+
+/**
+ * The shaft is sliced into thin sheets, each as wide as the round window at its height, so the
+ * light is round where it leaves the window (the two PANES were rectangles). No sheet sits on the
+ * horizontal muntin, which leaves its shadow as a gap.
+ */
+const SLICES = Array.from({ length: 8 }, (_, i) => {
+  const y = WIN.y - WIN.r + 8 + ((WIN.r * 2 - 16) * i) / 7;
+  const half = Math.sqrt(Math.max(0, WIN.r ** 2 - (y - WIN.y) ** 2));
+  return { y, width: half * 2, length: (FLOOR - y) * ALONG };
+}).filter((s) => Math.abs(s.y - WIN.y) > WIN.bar);
 
 /** Dust motes riding the shafts: pane, fraction along it, sideways offset, drift period. */
 const MOTES = [
@@ -194,7 +206,7 @@ export function Archive({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic: (
 
 
       {/* Morning light from the round window, with dust turning in it. */}
-      {PANES.map((p) => (
+      {SLICES.map((p) => (
         <div
           key={p.y}
           className="s2-shaft"
@@ -203,8 +215,9 @@ export function Archive({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic: (
             top: p.y,
             width: p.width,
             height: p.length,
+            '--bar': `${((WIN.bar / 2 / p.width) * 100).toFixed(1)}%`,
             transform: `translateZ(${BACK + 1}px) rotateX(${(SLOPE * 180) / Math.PI}deg) skewX(${(Math.atan(SUN.dx / ALONG) * 180) / Math.PI}deg)`,
-          }}
+          } as CSSProperties}
         />
       ))}
       {MOTES.map(([x, y, z, period], i) => (
