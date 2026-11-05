@@ -31,6 +31,12 @@ const LIFT = [1.0, 0.08] as const;
  * quarter turn swings the farthest hangers about 10 degrees.
  */
 const INERTIA = { k: (2 * Math.PI / 1.2) ** 2, c: 1.6, gain: 0.5 };
+type Boot = 'closed' | 'raising' | 'open';
+/**
+ * Opening (ms): when the panels come in, how long the pop-up runs before the show opens, and
+ * the latest the pop-up starts if the curtain never reports it has risen.
+ */
+const BOOT = { panels: 250, settle: 1200, fallback: 4000 };
 const TILT = [26, 7, 2.5] as const;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -87,10 +93,11 @@ function PanelHead({ n, title }: { n: number; title: string }) {
   );
 }
 
-function StatusTag({ scene, moving }: { scene: Scene; moving: boolean }) {
+/** `note` replaces the moving / stopped readout (used before the show opens). */
+function StatusTag({ scene, moving, note }: { scene: Scene; moving: boolean; note?: string }) {
   const night = scene.id === 's02' || scene.id === 's05';
   return (
-    <div className="s2-tag" data-moving={moving || undefined}>
+    <div className="s2-tag" data-moving={moving || note ? true : undefined}>
       <i className="s2-string" />
       <PanelHead n={1} title="上演中" />
       <div className="s2-tag-body">
@@ -108,7 +115,7 @@ function StatusTag({ scene, moving }: { scene: Scene; moving: boolean }) {
       </div>
       <div className="s2-tag-state">
         <i className="s2-lamp" />
-        <Script text={moving ? '回転中' : '停止中'} size={13} />
+        <Script text={note ?? (moving ? '回転中' : '停止中')} size={13} />
       </div>
     </div>
   );
@@ -252,13 +259,14 @@ function App() {
   const prevRef = useRef<SceneId | null>(null);
   const movingRef = useRef(false);
   /** The scene standing up; every other room stays folded flat like a closed pop-up page. */
-  const shownRef = useRef<SceneId | null>('s01');
+  const shownRef = useRef<SceneId | null>(reduced ? 's01' : null);
   const loupeRef = useRef(false);
   const t0 = useRef(performance.now());
   const stubKey = useRef(0);
 
   const [target, setTarget] = useState<SceneId>('s01');
   const [moving, setMoving] = useState(false);
+  const [boot, setBoot] = useState<Boot>(reduced ? 'open' : 'closed');
   const [stubs, setStubs] = useState<Stub[]>([]);
   const [loupe, setLoupe] = useState(false);
   const [keys, setKeys] = useState(() => new Set<string>());
@@ -308,7 +316,42 @@ function App() {
     setLoupe(loupeRef.current);
   }, []);
 
-  useEffect(() => logStub('s01'), [logStub]);
+  // Opening: panels come in, the curtain over 01 rises, the storefront pops up once the curtain
+  // is clear, then the show is open and the first stub is torn. Stages chain on the curtain's
+  // transitionend rather than fixed times, so a slow first frame cannot pop the scene up behind
+  // a curtain still coming down; the timers are only a fallback. Any key or click skips ahead.
+  const bootRef = useRef({ popUp: () => {}, open: () => {} });
+  useEffect(() => {
+    let done = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const open = () => {
+      if (done) return;
+      done = true;
+      timers.forEach(clearTimeout);
+      shownRef.current = 's01';
+      setBoot('open');
+      logStub('s01');
+    };
+    const popUp = () => {
+      if (done || shownRef.current) return;
+      shownRef.current = 's01';
+      timers.push(setTimeout(open, BOOT.settle));
+    };
+    bootRef.current = { popUp, open };
+    if (reduced) {
+      open();
+      return;
+    }
+    timers.push(setTimeout(() => setBoot('raising'), BOOT.panels), setTimeout(popUp, BOOT.fallback));
+    window.addEventListener('keydown', open, { once: true });
+    window.addEventListener('pointerdown', open, { once: true });
+    return () => {
+      done = true;
+      timers.forEach(clearTimeout);
+      window.removeEventListener('keydown', open);
+      window.removeEventListener('pointerdown', open);
+    };
+  }, [logStub]);
 
   useEffect(() => {
     const root = rootRef.current!;
@@ -474,7 +517,12 @@ function App() {
 
 
   return (
-    <div className={`s2${loupe ? ' s2-holding' : ''}`} ref={rootRef} style={{ '--lens': `${LENS}px` } as CSSProperties}>
+    <div
+      className={`s2${loupe ? ' s2-holding' : ''}`}
+      ref={rootRef}
+      data-boot={boot}
+      style={{ '--lens': `${LENS}px` } as CSSProperties}
+    >
       <PaperDefs />
       <div className="s2-backdrop s2-tex" />
       <div
@@ -491,7 +539,18 @@ function App() {
         <div className="s2-tilt" ref={tiltRef} style={{ top: `${VIEW.pivotY * 100}%` }}>
           <div className="s2-box" ref={boxRef}>
             <div className="s2-table" ref={tableRef}>
-              <Compartment theta={0} surfaces={storefrontSurfaces} ref={setComp('s01')}>
+              <Compartment
+                theta={0}
+                surfaces={storefrontSurfaces}
+                ref={setComp('s01')}
+                cover={
+                  boot !== 'open' && (
+                    <div className="s2-curtain" onTransitionEnd={() => bootRef.current.popUp()}>
+                      <Script text="まもなく開演" size={30} />
+                    </div>
+                  )
+                }
+              >
                 <Storefront go={turn} toAttic={toAttic} toBack={toBack} />
               </Compartment>
               <Compartment theta={90} surfaces={nightSurfaces} ref={setComp('s02')}>
@@ -511,7 +570,7 @@ function App() {
         </div>
       </div>
 
-      <StatusTag scene={sceneById(target)} moving={moving} />
+      <StatusTag scene={sceneById(target)} moving={moving} note={boot === 'open' ? undefined : boot === 'closed' ? '開演前' : '開演'} />
       <Dial target={target} pick={goTo} discRef={discRef} />
       <Stubs stubs={stubs} />
       <Tools loupe={loupe} toggle={toggleLoupe} keys={keys} />

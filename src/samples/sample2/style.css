@@ -814,6 +814,67 @@
   }
 }
 
+/* ---- Opening ----------------------------------------------------------------------------- */
+
+.s2[data-boot='closed'] :is(.s2-panel, .s2-tag) {
+  opacity: 0;
+}
+
+/* The status tag drops in on its string; the panels follow, a beat apart. */
+.s2[data-boot='raising'] .s2-tag {
+  animation: s2-tag-drop 0.7s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.s2[data-boot='raising'] .s2-panel {
+  animation: s2-panel-in 0.5s cubic-bezier(0.05, 0.7, 0.1, 1) both;
+}
+
+.s2[data-boot='raising'] .s2-dial {
+  animation-delay: 0.15s;
+}
+
+.s2[data-boot='raising'] .s2-stubs {
+  animation-delay: 0.25s;
+}
+
+.s2[data-boot='raising'] .s2-tools {
+  animation-delay: 0.35s;
+}
+
+@keyframes s2-tag-drop {
+  from {
+    opacity: 0;
+    translate: 0 -170px;
+  }
+}
+
+@keyframes s2-panel-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+    scale: 0.96;
+  }
+}
+
+/* Stage curtain over the storefront's window: folds in deep plum, a scalloped hem, rising on
+   cue. It sits in the window's portal, so the window clips it. */
+.s2-curtain {
+  position: absolute;
+  inset: 0 0 -24px;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(rgb(0 0 0 / 0.18), transparent 22%),
+    repeating-linear-gradient(90deg, #5b2a4a 0 22px, #6e3559 22px 40px, #4a2140 40px 48px);
+  color: #f2cf7a;
+  mask: radial-gradient(14px 12px at 50% 100%, transparent 98%, #000) 0 0 / 40px 100%;
+  transition: translate 1s cubic-bezier(0.65, 0, 0.35, 1) 0.55s;
+}
+
+.s2[data-boot='raising'] .s2-curtain {
+  translate: 0 -105%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .s2-hanger,
   .s2-hanger.s2-nudged > .s2-knock,

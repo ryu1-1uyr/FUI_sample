@@ -114,6 +114,7 @@ function Portal({
   depth,
   surfaces,
   transform,
+  cover,
   children,
 }: {
   w: number;
@@ -121,6 +122,8 @@ function Portal({
   depth: number;
   surfaces: Surfaces;
   transform: string;
+  /** Drawn flat over the window, clipped to it (the opening curtain). */
+  cover?: ReactNode;
   children: ReactNode;
 }) {
   // Each surface is drawn a little oversize so the room's corners overlap instead of leaving a seam.
@@ -168,6 +171,7 @@ function Portal({
         ))}
         {children}
       </div>
+      {cover}
     </div>
   );
 }
@@ -175,15 +179,16 @@ function Portal({
 type CompartmentProps = {
   theta: number;
   surfaces: Surfaces;
+  cover?: ReactNode;
   children: ReactNode;
   ref?: Ref<HTMLDivElement>;
 };
 
 /** One side of the box: the window onto its room, framed by the cut cardboard edges. */
-export function Compartment({ theta, surfaces, children, ref }: CompartmentProps) {
+export function Compartment({ theta, surfaces, cover, children, ref }: CompartmentProps) {
   return (
     <div ref={ref} className="s2-comp" style={{ transform: `rotateY(${theta}deg)` }}>
-      <Portal w={W} h={H} depth={D} surfaces={surfaces} transform={`translateZ(${FRONT}px)`}>
+      <Portal w={W} h={H} depth={D} surfaces={surfaces} transform={`translateZ(${FRONT}px)`} cover={cover}>
         {children}
       </Portal>
       <div
