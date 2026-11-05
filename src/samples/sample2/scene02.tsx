@@ -178,13 +178,13 @@ export function NightField({ go, toAttic }: { go: (dir: -1 | 1) => void; toAttic
         <Tuft w={76} h={80} tone={NIGHT_TUFT} />
       </Flat>
 
-      <Hanger x={-110} z={320} chain={56} size={44} period={4.4} phase={0.4} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={-110} z={320} chain={56} size={44} period={4.4} phase={0.4} onClick={toAttic} label="天井裏の空へ" glow="255 170 80">
         <rect x={12} y={0} width={20} height={8} rx={2} fill="#6b4a3a" />
         <rect x={6} y={8} width={32} height={42} rx={9} fill="#f2c46b" />
         <rect x={13} y={15} width={18} height={28} rx={6} fill="#fff0b8" />
         <rect x={10} y={50} width={24} height={6} rx={2} fill="#6b4a3a" />
       </Hanger>
-      <Hanger x={190} z={90} chain={112} size={84} period={5.2} phase={1.6} onClick={toAttic} label="天井裏の空へ">
+      <Hanger x={190} z={90} chain={112} size={84} period={5.2} phase={1.6} onClick={toAttic} label="天井裏の空へ" glow="140 175 255">
         <path d="M54 4A36 36 0 1 0 54 72A40 40 0 0 1 54 4Z" fill="#fff0b8" transform="translate(0 -4)" />
         <circle cx={26} cy={34} r={3} fill="#e8d38e" />
       </Hanger>

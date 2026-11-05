@@ -73,7 +73,23 @@
 }
 
 .s2-flat {
-  filter: brightness(calc(var(--lit, 1) * (1 + var(--fog, 0) * 0.12))) saturate(calc(1 - var(--fog, 0) * 0.4));
+  /* --glow and --warm come from lighting.ts: how strongly, and how warmly, a light reaches it. */
+  filter: brightness(calc(var(--lit, 1) * (1 + var(--fog, 0) * 0.12) * (1 + var(--glow, 0))))
+    saturate(calc(1 - var(--fog, 0) * 0.4)) sepia(var(--warm, 0));
+}
+
+.s2-light {
+  position: absolute;
+  backface-visibility: hidden;
+  /* Plain alpha, not a blend mode: blending would flatten the room's 3D context. */
+  opacity: var(--facing, 1);
+  pointer-events: none;
+}
+
+.s2-halo {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .s2-ground {
@@ -147,7 +163,8 @@
   translate: 0 -4px 18px;
 }
 
-.s2-hit:hover > .s2-paper {
+.s2-hit:hover > .s2-paper,
+.s2-hit:hover > .s2-knock > .s2-paper {
   filter: url(#s2-paper) drop-shadow(0 12px 9px rgb(60 40 20 / 0.32));
 }
 
@@ -160,7 +177,8 @@
   outline: none;
 }
 
-.s2-hit:focus-visible > .s2-paper {
+.s2-hit:focus-visible > .s2-paper,
+.s2-hit:focus-visible > .s2-knock > .s2-paper {
   filter: url(#s2-paper) drop-shadow(0 0 0 #fff) drop-shadow(0 0 5px #fff) drop-shadow(0 10px 8px rgb(60 40 20 / 0.3));
 }
 
@@ -182,12 +200,14 @@
 
 /* A knock from the pointer. It runs on the inner layer, so it nests inside the idle swing on
    the outer one instead of replacing it; will-change keeps the paper filter from re-running. */
-.s2-hanger > .s2-paper {
+.s2-knock {
+  position: absolute;
+  inset: 0;
   transform-origin: 50% 0;
   will-change: transform;
 }
 
-.s2-hanger.s2-nudged > .s2-paper {
+.s2-hanger.s2-nudged > .s2-knock {
   animation: s2-nudge 1.8s ease-in-out;
 }
 
@@ -747,7 +767,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .s2-hanger,
-  .s2-hanger.s2-nudged > .s2-paper,
+  .s2-hanger.s2-nudged > .s2-knock,
   .s2-seed,
   .s2-sway,
   .s2-flutter,

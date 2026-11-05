@@ -49,11 +49,19 @@ export function Flat({ x, y, z, w, h, className = '', style, children, onClick, 
   } as CSSProperties;
   const inner = <div className="s2-paper">{children}</div>;
   const flat = onClick ? (
-    <button type="button" className={`s2-flat s2-hit ${className}`} style={pos} onClick={onClick} aria-label={label} {...events}>
+    <button
+      type="button"
+      className={`s2-flat s2-hit ${className}`}
+      style={pos}
+      onClick={onClick}
+      aria-label={label}
+      data-at={`${x} ${y + h / 2} ${z}`}
+      {...events}
+    >
       {inner}
     </button>
   ) : (
-    <div className={`s2-flat ${className}`} style={pos} {...events}>
+    <div className={`s2-flat ${className}`} style={pos} data-at={`${x} ${y + h / 2} ${z}`} {...events}>
       {inner}
     </div>
   );
@@ -84,6 +92,16 @@ export type Surfaces = {
   floor: ReactNode;
   ceiling: string;
 };
+
+type Dim = (w: number, h: number, d: number) => number;
+type Place = (w: number, h: number, d: number) => string;
+const LIGHT_PLANES: [string, Dim, Dim, Place][] = [
+  ['back', (w) => w, (_, h) => h, (_, __, d) => `translateZ(${FRONT - d}px)`],
+  ['floor', (w) => w, (_, __, d) => d, (_, h, d) => `translate3d(0, ${h / 2}px, ${FRONT - d / 2}px) rotateX(90deg)`],
+  ['ceiling', (w) => w, (_, __, d) => d, (_, h, d) => `translate3d(0, ${-h / 2}px, ${FRONT - d / 2}px) rotateX(-90deg)`],
+  ['left', (_, __, d) => d, (_, h) => h, (w, _, d) => `translate3d(${-w / 2}px, 0, ${FRONT - d / 2}px) rotateY(90deg)`],
+  ['right', (_, __, d) => d, (_, h) => h, (w, _, d) => `translate3d(${w / 2}px, 0, ${FRONT - d / 2}px) rotateY(-90deg)`],
+];
 
 /**
  * A window onto a room. The window element is its own perspective container; `aimPortal`
@@ -117,7 +135,11 @@ function Portal({
   const mid = FRONT - depth / 2;
   return (
     <div className="s2-portal" style={{ width: w, height: h, left: -w / 2, top: -h / 2, transform }}>
-      <div className="s2-room" style={{ left: w / 2, top: h / 2, transform: `translateZ(${-FRONT}px)` }}>
+      <div
+        className="s2-room"
+        style={{ left: w / 2, top: h / 2, transform: `translateZ(${-FRONT}px)` }}
+        data-room={`${w} ${h} ${depth}`}
+      >
         {box(w, h, `translateZ(${FRONT - depth}px)`, surfaces.back)}
         {box(w, depth, `translate3d(0, ${h / 2}px, ${mid}px) rotateX(90deg)`, surfaces.floor)}
         {box(w, depth, `translate3d(0, ${-h / 2}px, ${mid}px) rotateX(-90deg)`, undefined, surfaces.ceiling)}
@@ -128,6 +150,22 @@ function Portal({
           `translate3d(${w / 2}px, 0, ${mid}px) rotateY(-90deg)`,
           <div style={{ width: '100%', height: '100%', transform: 'scaleX(-1)' }}>{surfaces.side}</div>,
         )}
+        {/* Light pools, one per surface, painted by lighting.ts. They sit just off each surface
+            in their own layer, so repainting them never re-runs the paper filter beneath. */}
+        {LIGHT_PLANES.map(([plane, pw, ph, t]) => (
+          <div
+            key={plane}
+            className="s2-light"
+            data-plane={plane}
+            style={{
+              left: -pw(w, h, depth) / 2,
+              top: -ph(w, h, depth) / 2,
+              width: pw(w, h, depth),
+              height: ph(w, h, depth),
+              transform: `${t(w, h, depth)} translateZ(1px)`,
+            }}
+          />
+        ))}
         {children}
       </div>
     </div>
@@ -380,6 +418,7 @@ export function Hanger({
   phase,
   onClick,
   label,
+  glow,
   children,
 }: {
   x: number;
@@ -390,42 +429,70 @@ export function Hanger({
   phase: number;
   onClick?: () => void;
   label?: string;
+  /** Makes this hanger a light: its `r g b` colour, used for the halo and by lighting.ts. */
+  glow?: string;
   children: ReactNode;
 }) {
   const links = Math.max(1, Math.round(chain / 9));
+  const halo = size * 1.7;
+  const style = {
+    left: x - size / 2,
+    top: -H / 2,
+    width: size,
+    height: chain + size,
+    transform: `translateZ(${z}px)`,
+    '--fog': fogAt(z).toFixed(3),
+    '--period': `${period}s`,
+    '--phase': `${-phase}s`,
+  } as CSSProperties;
   return (
-    <Flat
-      x={x}
-      y={-H / 2}
-      z={z}
-      w={size}
-      h={chain + size}
-      className="s2-hanger"
-      style={{ '--period': `${period}s`, '--phase': `${-phase}s` } as CSSProperties}
+    <button
+      type="button"
+      className="s2-flat s2-hit s2-hanger"
+      style={style}
       onClick={onClick}
-      label={label}
+      aria-label={label}
       onPointerEnter={nudge}
       onAnimationEnd={settle}
+      data-hook={`${x} ${z} ${chain + size / 2}`}
+      data-light={glow}
+      data-at={glow ? undefined : `${x} ${-H / 2 + chain + size / 2} ${z}`}
     >
-      <svg viewBox={`0 0 ${size} ${chain + size}`} width={size} height={chain + size}>
-        <circle cx={size / 2} cy={2} r={4} fill="#8a7a63" />
-        {Array.from({ length: links }, (_, i) => {
-          const y = 4 + (i * (chain - 4)) / links;
-          const h = (chain - 4) / links + 1.5;
-          return i % 2 ? (
-            <rect key={i} x={size / 2 - 1.3} y={y} width={2.6} height={h} rx={1.3} fill="#9b9488" />
-          ) : (
-            <path
-              key={i}
-              fillRule="evenodd"
-              fill="#b3ab9d"
-              d={`M${size / 2 - 3} ${y + h / 2}a3 ${h / 2} 0 1 0 6 0a3 ${h / 2} 0 1 0 -6 0Z` +
-                `M${size / 2 - 1.3} ${y + h / 2}a1.3 ${h / 2 - 2} 0 1 1 2.6 0a1.3 ${h / 2 - 2} 0 1 1 -2.6 0Z`}
-            />
-          );
-        })}
-        <g transform={`translate(0 ${chain})`}>{children}</g>
-      </svg>
-    </Flat>
+      <div className="s2-knock">
+        {glow && (
+          <div
+            className="s2-halo"
+            style={{
+              left: size / 2 - halo,
+              top: chain + size / 2 - halo,
+              width: halo * 2,
+              height: halo * 2,
+              background: `radial-gradient(closest-side, rgb(${glow} / 0.5), rgb(${glow} / 0.16) 45%, transparent)`,
+            }}
+          />
+        )}
+        <div className="s2-paper">
+          <svg viewBox={`0 0 ${size} ${chain + size}`} width={size} height={chain + size}>
+            <circle cx={size / 2} cy={2} r={4} fill="#8a7a63" />
+            {Array.from({ length: links }, (_, i) => {
+              const y = 4 + (i * (chain - 4)) / links;
+              const h = (chain - 4) / links + 1.5;
+              return i % 2 ? (
+                <rect key={i} x={size / 2 - 1.3} y={y} width={2.6} height={h} rx={1.3} fill="#9b9488" />
+              ) : (
+                <path
+                  key={i}
+                  fillRule="evenodd"
+                  fill="#b3ab9d"
+                  d={`M${size / 2 - 3} ${y + h / 2}a3 ${h / 2} 0 1 0 6 0a3 ${h / 2} 0 1 0 -6 0Z` +
+                    `M${size / 2 - 1.3} ${y + h / 2}a1.3 ${h / 2 - 2} 0 1 1 2.6 0a1.3 ${h / 2 - 2} 0 1 1 -2.6 0Z`}
+                />
+              );
+            })}
+            <g transform={`translate(0 ${chain})`}>{children}</g>
+          </svg>
+        </div>
+      </div>
+    </button>
   );
 }

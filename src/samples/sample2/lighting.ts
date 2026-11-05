@@ -1,0 +1,145 @@
+import { W, type SceneId } from './scenes';
+
+// Point lights for the rooms. Light sources are hanging cut-outs (Hanger with `glow`); each frame
+// their position is read back from the swing, then:
+// - every surface gets a pool of light, from the exact irradiance of a point light on a plane
+//   (cos / d^2, i.e. h / (r^2 + h^2)^1.5), painted as a radial gradient on its .s2-light layer;
+// - every flat gets --glow / --warm from its distance to each light and which side it faces.
+// Room frame as in stage.tsx: the window is at z = W/2, the back wall at W/2 - depth.
+
+type Rig = {
+  /** Scales the room's own brightness, so the lights have darkness to work against. */
+  ambient: number;
+  /** Per light, in hanger order: strength, and how much it warms what it reaches (sepia). */
+  lights: { power: number; warmth: number; flicker?: boolean }[];
+};
+
+export const RIGS: Partial<Record<SceneId, Rig>> = {
+  s02: {
+    ambient: 0.72,
+    lights: [
+      { power: 1, warmth: 0.3, flicker: true },
+      { power: 0.4, warmth: 0 },
+    ],
+  },
+};
+
+/** Distance at which a light of power 1 gives a pool of REF_ALPHA straight below it. */
+const REF = 170;
+const REF_ALPHA = 0.7;
+const MAX_ALPHA = 0.78;
+const FRONT = W / 2;
+
+type Lamp = { x: number; y: number; z: number; rgb: string; power: number; warmth: number };
+
+/** Gradient stops as multiples of the light's height above the plane. */
+const STOPS = [0, 0.3, 0.6, 0.9, 1.3, 1.8, 2.4];
+
+function pool(u: number, v: number, h: number, lamp: Lamp) {
+  if (h <= 1) return '';
+  const a0 = Math.min(MAX_ALPHA, lamp.power * REF_ALPHA * (REF / h) ** 2);
+  const stops = STOPS.map((k) => {
+    // cos / d^2 gives (1 + k^2)^-1.5; squared again to keep the pool's edge readable on paper.
+    const a = a0 / (1 + k * k) ** 3;
+    return `rgb(${lamp.rgb} / ${a.toFixed(3)}) ${(k * h).toFixed(1)}px`;
+  });
+  return `radial-gradient(circle at ${u.toFixed(1)}px ${v.toFixed(1)}px, ${stops.join(', ')}, transparent ${(2.6 * h).toFixed(1)}px)`;
+}
+
+/** Where the light's foot falls on each plane (u, v in the plane's own px) and its height above it. */
+function onPlane(plane: string, l: Lamp, w: number, h: number, d: number): [number, number, number] {
+  const back = FRONT - d;
+  switch (plane) {
+    case 'back':
+      return [l.x + w / 2, l.y + h / 2, l.z - back];
+    case 'floor':
+      return [l.x + w / 2, l.z - back, h / 2 - l.y];
+    case 'ceiling':
+      return [l.x + w / 2, FRONT - l.z, l.y + h / 2];
+    case 'left':
+      return [FRONT - l.z, l.y + h / 2, l.x + w / 2];
+    default:
+      return [l.z - back, l.y + h / 2, w / 2 - l.x];
+  }
+}
+
+const angle = (el: Element) => parseFloat(getComputedStyle(el).rotate) || 0;
+
+type Cache = {
+  room: HTMLElement;
+  dims: [number, number, number];
+  planes: HTMLElement[];
+  hangers: HTMLElement[];
+  flats: { el: HTMLElement; x: number; y: number; z: number; glow: number; warm: number }[];
+};
+const caches = new WeakMap<HTMLElement, Cache>();
+
+function cacheFor(comp: HTMLElement): Cache | null {
+  let c = caches.get(comp);
+  if (!c) {
+    const room = comp.querySelector<HTMLElement>('.s2-room');
+    if (!room) return null;
+    c = {
+      room,
+      dims: room.dataset.room!.split(' ').map(Number) as [number, number, number],
+      planes: [...room.querySelectorAll<HTMLElement>('.s2-light')],
+      hangers: [...room.querySelectorAll<HTMLElement>('[data-light]')],
+      flats: [...room.querySelectorAll<HTMLElement>('[data-at]')].map((el) => {
+        const [x, y, z] = el.dataset.at!.split(' ').map(Number);
+        return { el, x, y, z, glow: -1, warm: -1 };
+      }),
+    };
+    caches.set(comp, c);
+  }
+  return c;
+}
+
+/** Re-lights one room for this frame. `t` is seconds, for the lantern's flicker. */
+export function lightRoom(comp: HTMLElement, rig: Rig, t: number) {
+  const c = cacheFor(comp);
+  if (!c) return;
+  const [w, h, d] = c.dims;
+
+  const lamps: Lamp[] = c.hangers.map((el, i) => {
+    const [hx, hz, drop] = el.dataset.hook!.split(' ').map(Number);
+    const a = (angle(el) + angle(el.firstElementChild!)) * (Math.PI / 180);
+    const spec = rig.lights[i] ?? { power: 0.5, warmth: 0 };
+    const flicker = spec.flicker ? 1 + Math.sin(t * 7.3) * 0.04 + Math.sin(t * 13.1 + 1.7) * 0.03 : 1;
+    // The swing turns about the hook; positive CSS rotation moves the bottom to the left.
+    return { x: hx - Math.sin(a) * drop, y: -h / 2 + Math.cos(a) * drop, z: hz, rgb: el.dataset.light!, power: spec.power * flicker, warmth: spec.warmth };
+  });
+
+  for (const el of c.planes) {
+    el.style.background = lamps
+      .map((l) => {
+        const [u, v, ht] = onPlane(el.dataset.plane!, l, w, h, d);
+        return pool(u, v, ht, l);
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  for (const f of c.flats) {
+    let glow = 0;
+    let warm = 0;
+    for (const l of lamps) {
+      const dx = l.x - f.x;
+      const dy = l.y - f.y;
+      const dz = l.z - f.z;
+      const dist = Math.hypot(dx, dy, dz);
+      // Cut-outs face the window (+z): lit from the front, only a little spill from behind.
+      const facing = 0.2 + 0.8 * Math.max(0, dz / dist);
+      const e = (l.power * facing * REF * REF) / (dist * dist + 60 * 60);
+      glow += e * 0.55;
+      warm += e * l.warmth;
+    }
+    glow = Math.min(1.1, glow);
+    warm = Math.min(0.45, warm);
+    if (Math.abs(glow - f.glow) > 0.005 || Math.abs(warm - f.warm) > 0.005) {
+      f.glow = glow;
+      f.warm = warm;
+      f.el.style.setProperty('--glow', glow.toFixed(3));
+      f.el.style.setProperty('--warm', warm.toFixed(3));
+    }
+  }
+}

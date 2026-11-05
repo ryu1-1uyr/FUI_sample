@@ -8,6 +8,7 @@ import { Workshop, workshopSurfaces } from './scene03';
 import { Archive, archiveSurfaces } from './scene04';
 import { AtticSky, atticSurfaces } from './scene05';
 import { H, SCENES, W, sceneAtTheta, sceneById, type Scene, type SceneId } from './scenes';
+import { RIGS, lightRoom } from './lighting';
 import { Script, clearLoupe, updateLoupe } from './script';
 import { Attic, Compartment, LID, aimPortal } from './stage';
 import './style.css';
@@ -389,11 +390,14 @@ function App() {
         const el = compRefs.current.get(s.id);
         if (!el) return;
         const facing = s.theta === null ? up : Math.max(0, Math.cos((yaw.x + s.theta) * DEG)) * (1 - up);
-        const l = 0.5 + 0.5 * facing;
+        const rig = RIGS[s.id];
+        const l = (0.5 + 0.5 * facing) * (rig?.ambient ?? 1);
         if (Math.abs((lit.get(s.id) ?? -1) - l) > 0.004) {
           lit.set(s.id, l);
           el.style.setProperty('--lit', l.toFixed(3));
+          el.style.setProperty('--facing', facing.toFixed(3));
         }
+        if (rig && weights[i] > 0.02) lightRoom(el, rig, now / 1000);
         el.toggleAttribute('data-live', weights[i] > 0.9);
         el.toggleAttribute('data-awake', weights[i] > 0.02);
       });
