@@ -262,6 +262,8 @@ function App() {
   const movingRef = useRef(false);
   /** The scene standing up; every other room stays folded flat like a closed pop-up page. */
   const shownRef = useRef<SceneId | null>(reduced ? 's01' : null);
+  /** The scene being turned away from. It stays standing until the next one starts to stand up. */
+  const leavingRef = useRef<SceneId | null>(null);
   const loupeRef = useRef(false);
   const t0 = useRef(performance.now());
   const stubKey = useRef(0);
@@ -300,6 +302,7 @@ function App() {
     prevRef.current = targetRef.current;
     targetRef.current = id;
     movingRef.current = true;
+    leavingRef.current = shownRef.current ?? leavingRef.current;
     shownRef.current = null;
     setTarget(id);
     setMoving(true);
@@ -483,13 +486,15 @@ function App() {
         if (rig && weights[i] > 0.02) lightRoom(el, rig, now / 1000);
         el.toggleAttribute('data-live', weights[i] > 0.9);
         el.toggleAttribute('data-awake', weights[i] > 0.02);
-        el.toggleAttribute('data-folded', !reduced && s.id !== shownRef.current);
+        el.toggleAttribute('data-folded', !reduced && s.id !== shownRef.current && s.id !== leavingRef.current);
       });
 
       // Respond first, finish after: the arriving scene stands up while the turn is still easing in,
       // and only the stub and the status wait for the turn to come fully to rest.
       if (movingRef.current && Math.abs(yaw.x - yaw.target) < ARRIVE && Math.abs(pitch.x - pitch.target) < ARRIVE) {
         shownRef.current = targetRef.current;
+        // By now it has turned out of view, so it folds unseen, ready to pop up next visit.
+        leavingRef.current = null;
       }
       if (movingRef.current && settled(yaw) && settled(pitch)) {
         movingRef.current = false;

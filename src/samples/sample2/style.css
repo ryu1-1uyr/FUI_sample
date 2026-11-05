@@ -88,9 +88,10 @@
   transition: var(--s2-unfold);
 }
 
+/* Folding happens out of view (see leavingRef), so it is instant. */
 .s2-comp[data-folded] :is(.s2-flat, .s2-solid) {
   --pop: 90deg;
-  transition: --pop 0.25s cubic-bezier(0.5, 0, 0.75, 0);
+  transition: none;
 }
 
 .s2-flat {
