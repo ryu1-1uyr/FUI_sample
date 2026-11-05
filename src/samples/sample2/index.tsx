@@ -36,7 +36,7 @@ type Boot = 'closed' | 'raising' | 'open';
  * Opening (ms): when the panels come in, how long the pop-up runs before the show opens, and
  * the latest the pop-up starts if the curtain never reports it has risen.
  */
-const BOOT = { panels: 250, settle: 1200, fallback: 4000 };
+const BOOT = { panels: 100, settle: 1200, fallback: 3000 };
 const TILT = [26, 7, 2.5] as const;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');

@@ -868,7 +868,7 @@
     repeating-linear-gradient(90deg, #5b2a4a 0 22px, #6e3559 22px 40px, #4a2140 40px 48px);
   color: #f2cf7a;
   mask: radial-gradient(14px 12px at 50% 100%, transparent 98%, #000) 0 0 / 40px 100%;
-  transition: translate 1s cubic-bezier(0.65, 0, 0.35, 1) 0.55s;
+  transition: translate 0.7s cubic-bezier(0.65, 0, 0.35, 1) 0.15s;
 }
 
 .s2[data-boot='raising'] .s2-curtain {
